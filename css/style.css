@@ -1,0 +1,221 @@
+
+/* https://codepen.io/anon/pen/aWQNOr */
+
+body {
+  background: #eee;
+	color: #333;
+	text-align: center;
+}
+
+a {
+	color: #2A679F;
+}
+/*========*/
+.hidden{
+	display: none;
+}
+a.cirussearch{
+	float:right;
+	padding-right:20px;
+}
+span.commonslink{
+	display: block;
+}
+.form-wrapper {
+	background-color: #f6f6f6;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#f6f6f6), to(#eae8e8));
+	background-image: -webkit-linear-gradient(top, #f6f6f6, #eae8e8);
+	background-image: -moz-linear-gradient(top, #f6f6f6, #eae8e8);
+	background-image: -ms-linear-gradient(top, #f6f6f6, #eae8e8);
+	background-image: -o-linear-gradient(top, #f6f6f6, #eae8e8);
+	background-image: linear-gradient(top, #f6f6f6, #eae8e8);
+	border-color: #dedede #bababa #aaa #bababa;
+	border-style: solid;
+	border-width: 1px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	-webkit-box-shadow: 0 3px 3px rgba(255,255,255,.1), 0 3px 0 #bbb, 0 4px 0 #aaa, 0 5px 5px #444;
+	-moz-box-shadow: 0 3px 3px rgba(255,255,255,.1), 0 3px 0 #bbb, 0 4px 0 #aaa, 0 5px 5px #444;
+	box-shadow: 0 3px 3px rgba(255,255,255,.1), 0 3px 0 #bbb, 0 4px 0 #aaa, 0 5px 5px #444;
+	overflow: hidden;
+	padding: 8px;
+}
+.form-wrapper textarea,
+.form-wrapper input {
+	border: 1px solid #CCC;
+	-webkit-box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #FFF;
+	-moz-box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #FFF;
+	box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #FFF;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+  	color: #999;
+	font: 16px Lucida Sans, Trebuchet MS, Tahoma, sans-serif;
+	height: 40px;
+	padding: 10px;
+	width: 100%;
+}
+.form-wrapper textarea.expand{
+	height: 200px;
+
+}
+.form-wrapper input:focus {
+	border-color: #aaa;
+	-webkit-box-shadow: 0 1px 1px #bbb inset;
+	-moz-box-shadow: 0 1px 1px #bbb inset;
+	box-shadow: 0 1px 1px #bbb inset;
+	outline: 0;
+}
+
+.form-wrapper input:-moz-placeholder,
+.form-wrapper input:-ms-input-placeholder,
+.form-wrapper input::-webkit-input-placeholder {
+	color: #999;
+	font-weight: normal;
+}
+.remove{
+	float:left;
+}
+
+.form-wrapper .button {
+	background-color: #0483a0;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#31b2c3), to(#0483a0));
+	background-image: -webkit-linear-gradient(top, #31b2c3, #0483a0);
+	background-image: -moz-linear-gradient(top, #31b2c3, #0483a0);
+	background-image: -ms-linear-gradient(top, #31b2c3, #0483a0);
+	background-image: -o-linear-gradient(top, #31b2c3, #0483a0);
+	background-image: linear-gradient(top, #31b2c3, #0483a0);
+	border: 1px solid #00748f;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	-webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 1px 0 #FFF;
+	-moz-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 1px 0 #FFF;
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 1px 0 #FFF;
+	color: #fafafa;
+	cursor: pointer;
+	height: 42px;
+	float: right;
+	font: 15px Arial, Helvetica;
+	padding: 0;
+	text-transform: uppercase;
+	text-shadow: 0 1px 0 rgba(0, 0 ,0, .3);
+	width: 100px;
+}
+
+.form-wrapper .button:hover,
+.form-wrapper .button:focus {
+	background-color: #31b2c3;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#0483a0), to(#31b2c3));
+	background-image: -webkit-linear-gradient(top, #0483a0, #31b2c3);
+	background-image: -moz-linear-gradient(top, #0483a0, #31b2c3);
+	background-image: -ms-linear-gradient(top, #0483a0, #31b2c3);
+	background-image: -o-linear-gradient(top, #0483a0, #31b2c3);
+	background-image: linear-gradient(top, #0483a0, #31b2c3);
+}
+
+.form-wrapper .button:active {
+	-webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) inset;
+	-moz-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) inset;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) inset;
+	outline: 0;
+}
+
+.form-wrapper .button::-moz-focus-inner {
+	border: 0;
+}
+.remove.button{
+	vertical-align: middle;
+	float: left;
+	height: 19px;
+	width: 30px;
+	margin:2 2 2 2;
+	text-align: center; 
+	margin-right: 15px;
+	padding-top:1px;
+	box-sizing:inherit;
+	letter-spacing:inherit;
+}
+ul#names > li{
+	list-style: none;
+	min-height: 25px; 
+	clear: both;
+	list-style-position:inside;
+    border: 1px solid lightgrey;
+    margin:2 0 0 2;
+    text-align: left; 
+    padding-left: 5px;
+    padding-bottom:2px;
+    padding-top:2px;
+    margin-bottom:0px;
+
+
+}
+ul#names > li:hover{
+	background: lightgrey; 
+}
+ul#names{
+	padding: 0px;
+}
+ul.response{ 
+
+list-style-type: none;
+padding: 0;
+margin: 0;
+ }
+ul.response > li{
+	min-height: 100px;
+	padding-left:110px;
+	padding-top:5px;	
+    padding-right:5px;
+	background:url('placeholder.png') no-repeat left top;
+}
+.word:hover{
+	color:red;
+	cursor: pointer; cursor: hand;
+}
+.word{
+	 margin-top: 5px;
+}
+#go{
+	margin-left:30px;
+	float: none;
+	width: 160px;
+}
+#progressbar{
+  border: 10px solid #4D4D4D;
+  background-color: #4D4D4D;
+
+}
+.ui-progressbar .ui-progressbar-value {
+  	 height: 30px;
+  background-color: #5387BA;
+  border-right: 1px solid #282828;
+  -webkit-box-shadow: inset 0 0 1px #ddd;
+  -moz-box-shadow: inset 0 0 1px #ddd;
+  -o-box-shadow: inset 0 0 1px #ddd;
+  box-shadow: inset 0 0 1px #ddd;
+  background-image: -webkit-linear-gradient(#66A3E2, #5387BA 50%, #4B79AF 51%, #385D87);
+  background-image: -moz-linear-gradient(#66A3E2, #5387BA 50%, #4B79AF 51%, #385D87);
+  background-image: -o-linear-gradient(#66A3E2, #5387BA 50%, #4B79AF 51%, #385D87);
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  }
+.ui-progressbar  {
+
+  border: 1px solid #1C1C1C;
+  background-color: #313131;
+  -webkit-box-shadow: 0 0 1px #666, inset 0 1px 1px #222;
+  -moz-box-shadow: 0 0 1px #666, inset 0 1px 1px #222;
+  -o-box-shadow: 0 0 1px #666, inset 0 1px 1px #222;
+  box-shadow: 0 0 1px #666, inset 0 1px 1px #222;
+  background-image: -webkit-linear-gradient(#323232, #2E2E2E 50%, #323232);
+  background-image: -moz-linear-gradient(#323232, #2E2E2E 50%, #323232);
+  background-image: -o-linear-gradient(#323232, #2E2E2E 50%, #323232);
+}
+
+.flex{
+	display: flex;
+}
