@@ -42,6 +42,7 @@ span.commonslink{
 	padding: 8px;
 }
 .form-wrapper textarea,
+.form-wrapper select,
 .form-wrapper input {
 	border: 1px solid #CCC;
 	-webkit-box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #FFF;
@@ -53,7 +54,7 @@ span.commonslink{
   	color: #999;
 	font: 16px Lucida Sans, Trebuchet MS, Tahoma, sans-serif;
 	height: 40px;
-	padding: 10px;
+	/*padding: 10px;*/
 	width: 100%;
 }
 .form-wrapper textarea.expand{
@@ -218,4 +219,26 @@ ul.response > li{
 
 .flex{
 	display: flex;
+}
+
+#region_label{
+	/*direction: rtl;*/
+	text-align: left;
+	width: 100%;
+	font-size: 1.5em;
+
+}
+.spindle:before {
+    position: absolute;
+    content: '';
+    width: 100px;
+    height: 100px;
+    background-image: url("../img/loader.gif");
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+label{
+	text-align: left;
+	margin-top: -10px;
+	margin-bottom:0px;
 }

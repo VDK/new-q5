@@ -6,7 +6,7 @@ include_once 'sparqlQuery.php';
 class Region
 {
 	private $qid = null;
-	private $parts = array();
+	private $parts = null;
 	private $parent = null;
 	private $nationality = null;
 	private $label = "";
@@ -18,7 +18,35 @@ class Region
 
 	public function setQID($value){
 		if (preg_match('/^Q\d+$/', $value)){
+			$this->parts = null;
+			$this->parent = null;
+			$this->label = "";
+			$this->nationality = null;
 			$this->qid = $value;
+		}
+	}
+	public function getQID(){
+		return $this->qid;
+	}
+	public function setLabel($value){
+		$this->label = strip_tags($value);
+	}
+	public function getLabel(){
+		if ( $this->qid != null && $this->label == null){
+			$query = 'SELECT ?itemLabel WHERE  {
+			   BIND(wd:'.$this->qid.' AS ?item).
+			   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+			}LIMIT 1';
+			$data = sparqlQuery($query);
+			foreach ($data['results']['bindings'] as  $value) {
+				$this->label = $value['itemLabel']['value'];
+			}
+		}
+		return $this->label;
+	}
+	
+	public function getParts(){
+		if($this->qid != null && $this->parts == null){
 			$this->parts = array();
 			$this->parentQID = null;
 			$query = 'SELECT ?qid ?itemLabel ?hasPartLabel ?parentQID WHERE  {
@@ -44,29 +72,10 @@ class Region
 			
 			asort($this->parts);
 		}
-	}
-	public function getQID(){
-		return $this->qid;
-	}
-	public function setLabel($value){
-		$this->label = strip_tags($value);
-	}
-	public function getLabel(){
-		if ( $this->qid != null && $this->label == null){
-			$query = 'SELECT ?itemLabel WHERE  {
-			   BIND(wd:'.$this->qid.' AS ?item).
-			   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-			}LIMIT 1';
-			$data = sparqlQuery($query);
-			foreach ($data['results']['bindings'] as  $value) {
-				$this->label = $value['itemLabel']['value'];
-			}
-		}
-		return $this->label;
-	}
-	
-	public function getParts(){
 		return $this->parts;
+	}
+	public function getShortLabel(){
+		return preg_replace('/^(.+ in (the )?)(.+)$/', "$3", self::getLabel());
 	}
 
 	public function getParentQID(){

@@ -10,8 +10,13 @@ if(isset($_COOKIE['selected_region'])){
     $region->setQID($_COOKIE['selected_region']);
 }
 if (isset($_POST['inputtext'])){
+
   $region->setQID($_POST['selected_region']);
   setcookie("selected_region", $region->getQID());
+  //handle reference
+  $reference1 = new Reference($_POST['ref_url'], $_POST['ref_lang'], $_POST['ref_authors'], $_POST['ref_title'], $_POST['ref_pubdate']);
+  //end ref
+  //handle person
   $person1 = new Person();
   $text = " ".strip_tags($_POST['inputtext']); //regex doesn't like empty string.
   //set Description
@@ -22,6 +27,7 @@ if (isset($_POST['inputtext'])){
     $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
     if (strripos($text, $dayOfWeek) != false){
       $person1->setDOD ('last '.$dayOfWeek);
+      $text = str_replace($dayOfWeek, "", $text);
     }
   }
   for ($months=0; $months < 11; $months++) { 
@@ -36,6 +42,7 @@ if (isset($_POST['inputtext'])){
      }
      elseif (strripos($text, $month) != false){
         $person1->setDOD($month, 10);
+        $text = str_replace($month, "", $text);
      }
   }
   //end DOD
@@ -55,7 +62,6 @@ if (isset($_POST['inputtext'])){
     $text = str_replace($matches[0][0], "", $text);
   }
   //end Name
-  $reference1 = new Reference($_POST['reference']);
   
 	
 	$quickStatement = "CREATE
@@ -90,7 +96,7 @@ function concatWithRef($qs, $reference){
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Covid-obid</title>
+  <title>covid-obid</title>
   <meta name="description" content="">
   <meta name="author" content="1Veertje">
 
@@ -102,7 +108,7 @@ function concatWithRef($qs, $reference){
 
   <!-- FONT
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <!-- <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css"> -->
 
   <!-- CSS
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -130,11 +136,12 @@ function concatWithRef($qs, $reference){
 			<div style='color:red; clear:both;'><?php echo $error; ?></div>
 		   <div> 
         <div class="flex">
-          <input type="text" id="region_label" name='region_label' value="<?php echo $region->getLabel();?>" readonly>
+          <h1 id="region_label"><?php echo $region->getLabel();?></h1>
           <button type="button" id="up_button" style="<?php echo ($region->getParentQID() == null) ? "display:none": "";?>">up</button>
         </div>
         <input type="hidden" id="selected_region" name="selected_region" value="<?php echo $region->getQID();?>">
         <input type="hidden" id="parent" name="parent" value="<?php echo $region->getParentQID();?>">
+        <div id="region_selection" style="<?php echo (count($region->getParts()) > 0)? "" : "display:none";?>">
         <label for="region">Choose a region:</label>
           <select id="region">
             <option/>
@@ -144,14 +151,27 @@ function concatWithRef($qs, $reference){
            }
            ?>
          </select>
+       </div>
         <p>
-          Personal details:
+        Personal details:
         <input type="text" id="inputtext" placeholder="Name, age, dod" name='inputtext' >
         <input type="text" id="description" placeholder="Description" name='description' >
-        Reference:
-        <input type="text" id="reference" placeholder="reference URL" name='reference' >
-          </select>
         </p>
+        Reference:
+          <label for="ref_url">reference URL</label>
+          <input type="text" id="ref_url" placeholder="https://" name='ref_url' >
+
+          <div id="ref_params" >
+            <label for="ref_title">title</label>
+            <div class="flex">
+              <input type="text" id="ref_lang" placeholder="lang" name="ref_lang" style="width:50px" value="en">
+              <input type="text" id="ref_title" name="ref_title" >
+            </div>
+            <label for="ref_authors">author</label>
+            <input type="text" id="ref_authors"  name="ref_authors" >
+            <label for="ref_pubdate">publcation date</label>
+            <input type="date" id="ref_pubdate"  name="ref_pubdate" >
+          </div>
           <span style="clear:both;"/>
 		    <input type="submit" class='button' value="go" id="submit">
 		</div> 	
