@@ -13,55 +13,56 @@ if (isset($_POST['inputtext'])){
 
   $region->setQID($_POST['selected_region']);
   setcookie("selected_region", $region->getQID());
-  //handle reference
-  $reference1 = new Reference($_POST['ref_url'], $_POST['ref_lang'], $_POST['ref_authors'], $_POST['ref_title'], $_POST['ref_pubdate']);
-  //end ref
+
+  $reference1 = new Reference(
+    $_POST['ref_url'], 
+    $_POST['ref_lang'],
+    $_POST['ref_authors'], 
+    $_POST['ref_title'], 
+    $_POST['ref_pubdate']);
+
   //handle person
   $person1 = new Person();
-  $text = " ".strip_tags($_POST['inputtext']); //regex doesn't like empty string.
-  //set Description
   $person1->setDescription($_POST['description']);
+  
+  $dod = " ".trim(strip_tags($_POST['dod']));
   //set Date of Death
-  $date = new DateTime();
-  for ( $days = 7;  $days--;) {
-    $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
-    if (strripos($text, $dayOfWeek) != false){
-      $person1->setDOD ('last '.$dayOfWeek);
-      $text = str_replace($dayOfWeek, "", $text);
+  if ($dod != ""){
+    $date = new DateTime();
+    for ( $days = 7;  $days--;) {
+      $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
+      if (strripos($dod, $dayOfWeek) != false){
+        $person1->setDOD ('last '.$dayOfWeek);
+      }
     }
-  }
-  for ($months=0; $months < 11; $months++) { 
-     $month = $date->modify( '+1 months' )->format( 'F' );
-     if (preg_match('/('.$month.' ?([123]?\d))/i', $text, $matches)){
-        $text = str_replace($matches[1], "", $text);
-        $person1->setDOD($matches[1]);
-     }
-     elseif (preg_match('/((\b[123]?\d) ?'.$month.')/i', $text, $matches)){
-        $text = str_replace($matches[1], "", $text);
-        $person1->setDOD($matches[1]);
-     }
-     elseif (strripos($text, $month) != false){
-        $person1->setDOD($month, 10);
-        $text = str_replace($month, "", $text);
-     }
+    for ($months=0; $months < 11; $months++) { 
+       $month = $date->modify( '+1 months' )->format( 'F' );
+       if (preg_match('/('.$month.' ?([123]?\d))/i', $dod, $matches)){
+          $person1->setDOD($matches[1]);
+       }
+       elseif (preg_match('/((\b[123]?\d) ?'.$month.')/i', $dod, $matches)){
+          $person1->setDOD($matches[1]);
+       }
+       elseif (strripos($dod, $month) != false){
+          $person1->setDOD($month, 10);
+       }
+    }
+    if($person1->getDOD() == null && strtotime($dod) != false){
+      $person1->setDOD($dod);
+    }
   }
   //end DOD
   //set Age
-  preg_match_all("/\d+/",$text, $matches);
+  $nameage = strip_tags($_POST['inputtext']); 
+  preg_match_all("/\d+/",$nameage, $matches);
   if (count($matches[0]) >=1){
     rsort($matches[0]);
     $person1->setAge($matches[0][0]);
-    $text = str_replace($matches[0][0], "", $text);
+    $nameage = str_replace($matches[0][0], "", $nameage);
   }
-  //end Age
-  //set Name
-  preg_match_all("/[\p{Lu}][\p{L}'’\-]*[\p{L}](( ([\p{Lu}][\p{L}'’\-]*[\p{L}]))*)( (([\p{Lu}]|Ph|Ch|Th)\.?)+)?(( ([\p{Lu}][\p{L}'’\-]*[\p{L}]))*) ((van|de[rsn]?|van de[srn]?|el|(in)? ['’]t|tot|te[rn]?|op|tot|uij?t|bij|aan|voor|von|Mac|Ó) )?([\p{Lu}][\p{L}'’\-]*[\p{L}])+/u", $text, $matches);
-  if (count($matches[0]) >=1){
-    rsort($matches[0]);
-    $person1->setName($matches[0][0]);
-    $text = str_replace($matches[0][0], "", $text);
-  }
-  //end Name
+  $nameage = preg_replace('/[,\.]/m', "", $nameage);
+  $person1->setName($nameage);
+  
   
 	
 	$quickStatement = "CREATE
@@ -154,23 +155,27 @@ function concatWithRef($qs, $reference){
        </div>
         <p>
         Personal details:
-        <input type="text" id="inputtext" placeholder="Name, age, dod" name='inputtext' >
-        <input type="text" id="description" placeholder="Description" name='description' >
+        <label for="inputtext">Name, age</label>
+        <input type="text" id="inputtext"  name='inputtext' >
+        <label for="inputtext">date of death</label>
+        <input type="text" id="dod"  name='dod' placeholder="Recently" >
+        <label for="inputtext">short description</label>
+        <input type="text" id="description" name='description' >
         </p>
         Reference:
-          <label for="ref_url">reference URL</label>
+          <label for="ref_url">URL</label>
           <input type="text" id="ref_url" placeholder="https://" name='ref_url' >
 
           <div id="ref_params" >
             <label for="ref_title">title</label>
             <div class="flex">
-              <input type="text" id="ref_lang" placeholder="lang" name="ref_lang" style="width:50px" value="en">
+              <input type="text" id="ref_lang" placeholder="lang" name="ref_lang" style="width:50px" maxlength="3" value="en">
               <input type="text" id="ref_title" name="ref_title" >
             </div>
-            <label for="ref_authors">author</label>
-            <input type="text" id="ref_authors"  name="ref_authors" >
             <label for="ref_pubdate">publcation date</label>
             <input type="date" id="ref_pubdate"  name="ref_pubdate" >
+            <label for="ref_authors">author</label>
+            <input type="text" id="ref_authors"  name="ref_authors" >
           </div>
           <span style="clear:both;"/>
 		    <input type="submit" class='button' value="go" id="submit">
