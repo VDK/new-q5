@@ -24,13 +24,25 @@ class reference
 	public function setURL($value){
   		if(filter_var($value, FILTER_VALIDATE_URL)){
 			$this->url = $value;
-			//maybe use parse_url instead
-			$main_url = preg_replace('/^((http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+\.[a-zA-Z]{2,11}?)*\/.*/', "$1", $this->url);
-			$query = 'SELECT ?qid WHERE {
-	  			?item  wdt:P856 <'.$main_url.'>.
-	  			BIND( REPLACE( str(?item), \'http://www.wikidata.org/entity/\', \'\') as ?qid)
-				}
-				LIMIT 1';
+			$host = parse_url($this->url)['host'];
+			$query = 'SELECT ?qid ?official_website WHERE {
+			  {?item wdt:P856 <https://www.'.$host.'/> }
+			  union
+			  {?item wdt:P856 <http://www.'.$host.'/> }
+			  union
+			  {?item wdt:P856 <http://'.$host.'/> }   
+			   union
+			  {?item wdt:P856 <https://'.$host.'/> }  
+			  union
+			   {?item wdt:P856 <https://www.'.$host.'> }
+			  union
+			  {?item wdt:P856 <http://www.'.$host.'> }
+			  union
+			  {?item wdt:P856 <http://'.$host.'> }   
+			   union
+			  {?item wdt:P856 <https://'.$host.'> } 
+			  BIND(REPLACE(STR(?item), "http://www.wikidata.org/entity/", "") AS ?qid)
+			}LIMIT 1';
 			$data = sparqlQuery($query);
 			foreach ($data['results']['bindings'] as $item) {
 				$this->publisherQID =  $item['qid']['value'];
@@ -120,6 +132,7 @@ class reference
 					$authors[] = trim(strip_tags($value['firstName']." ".$value['lastName']));
 				}
 				$this->authors = implode("|", $authors);
+				$this->authors = preg_replace('/\b[A-Z]+\b/', "", $this->authors); //CNN KTVN
 				if (isset($response['date'])){
 					$this->pubdate  = $response['date'];
 				}

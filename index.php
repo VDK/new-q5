@@ -188,7 +188,7 @@ if ($quickStatement ){?>
    <div class="form-wrapper">
 <textarea  style="height: 600px;" onClick='this.setSelectionRange(0, this.value.length)'>
 <?php echo($quickStatement);	?>
-</textarea>";
+</textarea>
 	</div>
 <?php } ?>
 
