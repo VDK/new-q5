@@ -9,6 +9,7 @@ class Person
 	private $doD = null;
 	private $doB = null;
 	private $age = null;
+	private $qid = null;
 	private $description = null;
 	private $fullName = null;
 	private $doDAccuracy = 10; //month
@@ -41,9 +42,21 @@ class Person
 		   return $this->doD;
 		}
 	}
+	public function setQID($value){
+		$value = trim(strip_tags($value));
+		if(preg_match('/^Q\d+$/', $value)){
+			$this->qid = $value;
+		}
+	}
+	public function getQID(){
+		return $this->qid;
+	}
 	public function setAge($value){
-		$this->age = $value;
-		self::updateDOB();
+		$value = trim(strip_tags($value));
+		if (preg_match('/^\d+$/', $value)){
+			$this->age = $value;
+			self::updateDOB();
+		}
 
 	}
 	private function updateDOB(){
@@ -60,7 +73,7 @@ class Person
 		}
 	}
 	public function setDOB($value){
-		$this->doB = $value;
+		$this->doB = trim(strip_tags($value));
 	}
 	public function getDOB($format = ''){
 		if ($this->doB != null && $format == 'qs'){
@@ -78,7 +91,7 @@ class Person
 		}
 	}
 	public function setName($value){
-		$this->fullName = trim($value);
+		$this->fullName = trim(strip_tags($value));
 	}
 	public function getName($format= ''){
 		if ($this->fullName != null && $format == 'qs'){

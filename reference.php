@@ -12,7 +12,6 @@ class reference
 	private $authors = "";
 	private $title   = null;
 	private $pubdate = null;
-
 	const CITOID = 'https://en.wikipedia.org/api/rest_v1/data/citation/wikibase/';
 	function __construct($url='', $lang='', $authors = '', $title = '', $pubdate = ''){
 		self::setURL($url);
@@ -24,25 +23,16 @@ class reference
 	public function setURL($value){
   		if(filter_var($value, FILTER_VALIDATE_URL)){
 			$this->url = $value;
-			$host = parse_url($this->url)['host'];
-			$query = 'SELECT ?qid ?official_website WHERE {
-			  {?item wdt:P856 <https://www.'.$host.'/> }
-			  union
-			  {?item wdt:P856 <http://www.'.$host.'/> }
-			  union
-			  {?item wdt:P856 <http://'.$host.'/> }   
-			   union
-			  {?item wdt:P856 <https://'.$host.'/> }  
-			  union
-			   {?item wdt:P856 <https://www.'.$host.'> }
-			  union
-			  {?item wdt:P856 <http://www.'.$host.'> }
-			  union
-			  {?item wdt:P856 <http://'.$host.'> }   
-			   union
-			  {?item wdt:P856 <https://'.$host.'> } 
-			  BIND(REPLACE(STR(?item), "http://www.wikidata.org/entity/", "") AS ?qid)
-			}LIMIT 1';
+			
+			$urls = self::getHostVariations();
+			
+			$query = 'SELECT ?qid WHERE {';
+			foreach ($urls as $url) {
+				$query .= "{?item wdt:P856 <".$url."> }\n union";
+			}
+			$query = preg_replace("/union$/", "", $query);
+
+			$query .= 'BIND(REPLACE(STR(?item), "http://www.wikidata.org/entity/", "") AS ?qid)	}LIMIT 1';
 			$data = sparqlQuery($query);
 			foreach ($data['results']['bindings'] as $item) {
 				$this->publisherQID =  $item['qid']['value'];
@@ -118,11 +108,13 @@ class reference
 			if (count($response) == 1){
 				$response = $response[0];
 				if (isset($response['url'])){
-					//this removes ?fb=tracking_ids
 					$this->url = $response['url'];
 				}
 				if (isset($response['language'])){
 					$this->lang = preg_replace('/^(\w\w\w?)-?.*/', '$1', strtolower($response['language']));
+					if($this->lang == 'eng'){
+						$this->lang =  'en';
+					}
 				}
 				if (isset($response['title'])){
 					$this->title = trim(strip_tags($response['title']));
@@ -139,7 +131,57 @@ class reference
 			}
 		}
 	}
+	private function getHostVariations(){
+		$host1 = parse_url($this->url)['host'];
+		$host_parts = explode(".", $host1);
+		array_shift($host_parts);
+		$host2  = implode(".", $host_parts);
+		$combos = combos(array(array("http://", "https://"), 
+							   array("www.", ""), 
+							   array($host1, $host2), 
+							   array("/", "")));
+		$urls = array();
+		foreach ($combos as $combo) {
+			$url = implode("", $combo);
+			if (!strpos($url, "www.www.")){
+				$urls[] = $url;
+			}
+		}
+		$urls = array_unique($urls);
+		return $urls;
+	}
 }
 
+/**
+ * Generate all the possible combinations among a set of nested arrays.
+ *
+ * @param array $data  The entrypoint array container.
+ * @param array $all   The final container (used internally).
+ * @param array $group The sub container (used internally).
+ * @param mixed $val   The value to append (used internally).
+ * @param int   $i     The key index (used internally).
+ *
+ * creator: Fabio Cicerchia
+ *
+ * https://gist.github.com/fabiocicerchia/4556892
+ */
+function combos(array $data, array &$all = array(), array $group = array(), $value = null, $i = 0){
+    $keys = array_keys($data);
+    if (isset($value) === true) {
+        array_push($group, $value);
+    }
+
+    if ($i >= count($data)) {
+        array_push($all, $group);
+    } else {
+        $currentKey     = $keys[$i];
+        $currentElement = $data[$currentKey];
+        foreach ($currentElement as $val) {
+            combos($data, $all, $group, $val, $i + 1);
+        }
+    }
+
+    return $all;
+}
 
 ?>

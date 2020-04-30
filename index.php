@@ -3,15 +3,15 @@ include_once 'person.php';
 include_once 'reference.php';
 include_once 'region.php';
 $error = '';
-$quickStatement = false;
+$qs = false;
 $region = new Region('Q81068910'); //19-20 coronavirus pandemic
 
 if(isset($_COOKIE['selected_region'])){
-    $region->setQID($_COOKIE['selected_region']);
+  $region->setQID($_COOKIE['selected_region']);
 }
-if (isset($_POST['inputtext'])){
-
+if (isset($_POST['fullname'])){
   $region->setQID($_POST['selected_region']);
+
   setcookie("selected_region", $region->getQID());
 
   $reference1 = new Reference(
@@ -23,63 +23,60 @@ if (isset($_POST['inputtext'])){
 
   //handle person
   $person1 = new Person();
+  $person1->setQID($_POST['person_QID']);
+  $person1->setName($_POST['fullname']);
+  $person1->setAge($_POST['age']);
   $person1->setDescription($_POST['description']);
   
-  $dod = " ".trim(strip_tags($_POST['dod']));
+  $dod = trim(strip_tags($_POST['dod']));
   //set Date of Death
   if ($dod != ""){
     $date = new DateTime();
-    for ( $days = 7;  $days--;) {
-      $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
-      if (strripos($dod, $dayOfWeek) != false){
-        $person1->setDOD ('last '.$dayOfWeek);
+    // makes in possible to input "last friday -1 weeks"
+    if (!strpos("last ", $dod)){ 
+      for ( $days = 7;  $days--;) {
+        $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
+        if (strripos($dod, $dayOfWeek) != false){
+          $person1->setDOD ('last '.$dayOfWeek);
+        }
       }
     }
-    for ($months=0; $months < 11; $months++) { 
-       $month = $date->modify( '+1 months' )->format( 'F' );
-       if (preg_match('/('.$month.' ?([123]?\d))/i', $dod, $matches)){
-          $person1->setDOD($matches[1]);
-       }
-       elseif (preg_match('/((\b[123]?\d) ?'.$month.')/i', $dod, $matches)){
-          $person1->setDOD($matches[1]);
-       }
-       elseif (strripos($dod, $month) != false){
-          $person1->setDOD($month, 10);
-       }
-    }
-    if($person1->getDOD() == null && strtotime($dod) != false){
+    if(preg_match('/\d/', $dod) && strtotime($dod) != false){
       $person1->setDOD($dod);
+    }
+    else{
+      for ($months=0; $months < 11; $months++) { 
+         $month = $date->modify( '+1 months' )->format( 'F' );
+         if (strripos($dod, $month) != false){
+            $person1->setDOD($month, 10);
+         }
+      }
     }
   }
   //end DOD
-  //set Age
-  $nameage = strip_tags($_POST['inputtext']); 
-  preg_match_all("/\d+/",$nameage, $matches);
-  if (count($matches[0]) >=1){
-    rsort($matches[0]);
-    $person1->setAge($matches[0][0]);
-    $nameage = str_replace($matches[0][0], "", $nameage);
-  }
-  $nameage = preg_replace('/[,\.]/m', "", $nameage);
-  $person1->setName($nameage);
   
   
-	
-	$quickStatement = "CREATE
+	if (!$person1->getQID()){
+    $qs .= "CREATE
 LAST|Len|\"".$person1->getName()."\"
 LAST|Lde|\"".$person1->getName()."\"
 LAST|Lfr|\"".$person1->getName()."\"
 LAST|Lnl|\"".$person1->getName()."\"
-LAST|Den|\"".$person1->getDescription()."\""
-."\nLAST|P31|Q5"
-.concatWithRef("\n".$person1->getDOD('qs').$person1->getAge('qs'), $reference1->getQS())
-.concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
-."\n".$region->getNationality('qs')
-.concatWithRef("\nLAST|P793|".$region->getQID(), $reference1->getQS()) 
-.concatWithRef("\nLAST|P1196|Q3739104", $reference1->getQS()) //manner of death = natural
-.concatWithRef("\nLAST|P509|Q84263196", $reference1->getQS()) //cause  of death = COVID-19
-.concatWithRef("\nLAST|P1050|Q84263196|P1534|Q4|P582|+".date('Y-m-d', $person1->getDOD()).'T00:00:00Z/'.$person1->getDODAccuracy(), $reference1->getQS())//medical condition = COVID-19
-."\n".$person1->getName('qs');
+LAST|Den|\"".$person1->getDescription()."\"
+LAST|P31|Q5
+".$region->getNationality('qs');
+  }
+  $qs .= "\n".$person1->getName('qs')
+  .concatWithRef("\nLAST|P793|".$region->getQID(), $reference1->getQS()) 
+  .concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
+  .concatWithRef("\n".$person1->getDOD('qs').$person1->getAge('qs'), $reference1->getQS())
+  .concatWithRef("\nLAST|P1196|Q3739104", $reference1->getQS()) //manner of death = natural
+  .concatWithRef("\nLAST|P509|Q84263196", $reference1->getQS()) //cause  of death = COVID-19
+  .concatWithRef("\nLAST|P1050|Q84263196|P1534|Q4|P582|+".date('Y-m-d', $person1->getDOD()).'T00:00:00Z/'.$person1->getDODAccuracy(), $reference1->getQS());//medical condition = COVID-19
+
+  if ($person1->getQID()){
+    $qs = preg_replace('/^LAST/m', $person1->getQID(), $qs);
+  }
 
 }
 
@@ -123,7 +120,6 @@ function concatWithRef($qs, $reference){
  
  <!-- Javascripts
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 <script type="text/javascript" src="script.js"></script>
 </head>
@@ -155,13 +151,24 @@ function concatWithRef($qs, $reference){
        </div>
         <p>
         Personal details:
-        <label for="inputtext">Name, age</label>
-        <input type="text" id="inputtext"  name='inputtext' >
-        <label for="inputtext">date of death</label>
+        <div>
+        <div class="flex">
+        <div style="width: 100%"><label for="fullname">name</label>
+        <input type="text" id="fullname"  name='fullname' ></div>
+
+        <div><label for="age">age</label>
+        <input type="text" id="age"  name='age' style="width:100px;"></div>
+      </div>
+        <label for="dod">date of death</label>
         <input type="text" id="dod"  name='dod' placeholder="Recently" >
-        <label for="inputtext">short description</label>
+        <label for="description">short description</label>
         <input type="text" id="description" name='description' >
-        </p>
+        </div>
+        <div id='possible_match' >
+          <input type="hidden" name="person_QID" id="person_QID">
+          <ul id='responses' ></ul>
+        </div>
+
         Reference:
           <label for="ref_url">URL</label>
           <input type="text" id="ref_url" placeholder="https://" name='ref_url' >
@@ -184,11 +191,12 @@ function concatWithRef($qs, $reference){
 	</div>
 
 <?php
-if ($quickStatement ){?>
+if ($qs ){?>
    <div class="form-wrapper">
-<textarea  style="height: 600px;" onClick='this.setSelectionRange(0, this.value.length)'>
-<?php echo($quickStatement);	?>
+<textarea id='quickstatement' style="height: 150px;" >
+<?php echo($qs);	?>
 </textarea>
+<a onclick="sendQS()" style="cursor: pointer;">Import QuickStatement</a>
 	</div>
 <?php } ?>
 
