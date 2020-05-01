@@ -118,11 +118,13 @@ class reference
 				}
 				if (isset($response['title'])){
 					$this->title = trim(strip_tags($response['title']));
+					//whatevere's after the pipe is probably "| Local Newspaper"
+					$this->title = preg_replace("/^(.+?)\|/", "$1", $this->title);
 				}
 				foreach ($response['creators'] as $value) {
-					//P2093 = author name string
 					$authors[] = trim(strip_tags($value['firstName']." ".$value['lastName']));
 				}
+				$authors = array_unique($authors);
 				$this->authors = implode("|", $authors);
 				$this->authors = preg_replace('/\b[A-Z]+\b/', "", $this->authors); //CNN KTVN
 				if (isset($response['date'])){

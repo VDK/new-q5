@@ -28,7 +28,7 @@ if (isset($_POST['fullname'])){
   $person1->setAge($_POST['age']);
   $person1->setDescription($_POST['description']);
   
-  $dod = trim(strip_tags($_POST['dod']));
+  $dod = " ".trim(strip_tags($_POST['dod']));
   //set Date of Death
   if ($dod != ""){
     $date = new DateTime();
