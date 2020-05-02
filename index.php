@@ -70,6 +70,7 @@ LAST|P31|Q5
   .concatWithRef("\nLAST|P793|".$region->getQID(), $reference1->getQS()) 
   .concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
   .concatWithRef("\n".$person1->getDOD('qs').$person1->getAge('qs'), $reference1->getQS())
+  ."\n".$reference1->getDescribedAtUrlQS()
   .concatWithRef("\nLAST|P1196|Q3739104", $reference1->getQS()) //manner of death = natural
   .concatWithRef("\nLAST|P509|Q84263196", $reference1->getQS()) //cause  of death = COVID-19
   .concatWithRef("\nLAST|P1050|Q84263196|P1534|Q4|P582|+".date('Y-m-d', $person1->getDOD()).'T00:00:00Z/'.$person1->getDODAccuracy(), $reference1->getQS());//medical condition = COVID-19

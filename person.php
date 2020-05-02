@@ -148,6 +148,7 @@ class Person
 					$qs .= "LAST|".$key."|".$value."\n";
 				}
 			}
+			$qs = preg_replace("/\n$/", "", $qs);
 			return $qs;
 		}
 		else{

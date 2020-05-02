@@ -9,6 +9,7 @@ class reference
 	private $url = null;
 	private $publisherQID = null;
 	private $lang  = 'en';
+	private $langQID = 'Q1860'; //English
 	private $authors = "";
 	private $title   = null;
 	private $pubdate = null;
@@ -55,19 +56,70 @@ class reference
 		return $this->title;
 	}
 	public function setLanguage($value){
-		$value = strtolower(strip_tags($value));
-		if (preg_match('/\w\w\w?(-\w\w\w?)?$/', $value)){
+		$value = trim(strtolower(strip_tags($value)));
+		if (preg_match('/\w\w\w?(-\w\w\w?)?$/', $value) && 
+			!in_array($value, array("en", "eng"))){
 			$this->lang = $value;
+			$query = 'SELECT DISTINCT ?qid  WHERE {
+                ?language wdt:P424 "'.$this->lang.'" . 
+       			?language wdt:P31 ?subclass_language.
+       			?subclass_language wdt:P279 * wd:Q34770 .
+       			hint:Query hint:optimizer "None".
+       			BIND( REPLACE( str(?language), \'http://www.wikidata.org/entity/\', \'\') as ?qid)
+      			}LIMIT 1';
+			$data = sparqlQuery($query);
+			foreach ($data['results']['bindings'] as $result){
+				$this->langQID = $result['qid']['value'];
+			}
 		}
+
 	}
 	public function getLanguage(){
 		return $this->lang;
 	}
 	public function setAuthors($value){
-		$this->authors = trim(strip_tags($value));
+		if (is_array($value)){
+			$value = array_unique($value);
+			$this->authors = implode("|", $value);
+		}
+		else{
+			$this->authors = trim(strip_tags($value));
+		}
+		$this->authors = preg_replace('/\bCNN\b/', "", $this->authors);
+		if (preg_match('/^[A-Z \W]+$/', $this->authors)) {
+			$this->authors = ucfirst(strtolower($this->authors));
+		}
 	}
 	public function getAuthors(){
 		return $this->authors;
+	}
+	public function getDescribedAtUrlQS(){
+		if ($this->url != null){
+			$qs = "LAST|P973|\"".$this->url."\"";
+			if ($this->title != null){
+				$qs .= '|P1476|'.$this->lang.':"'.$this->title.'"';
+			}
+			if ($this->publisherQID != null){
+				//P123 = publisher
+				$qs .= '|P123|'.$this->publisherQID;
+			}
+			$qs .= "|P407|".$this->langQID;
+			foreach (explode("|", $this->authors) as $author) {
+				//P2093 author name string
+				if($author != ""){
+					$qs .= '|P2093|"'.$author.'"';
+				}
+			}
+			if ($this->pubdate != null){
+				//P577 = publication date
+				$qs .= '|P577|+'.date("Y-m-d",$this->pubdate).'T00:00:00Z/11';
+			}
+			//P813 = retrieved
+			$qs .= '|P813|+'.date('Y-m-d', strtotime("today")).'T00:00:00Z/11'; 
+
+			return $qs;
+		}
+		return null;
 	}
 
 	public function getQS(){
@@ -86,6 +138,7 @@ class reference
 					$qs .= '|S2093|"'.$author.'"';
 				}
 			}
+			$qs .= "|S407|".$this->langQID;
 			if ($this->pubdate != null){
 				//P577 = publication date
 				$qs .= '|S577|+'.date("Y-m-d",$this->pubdate).'T00:00:00Z/11';
@@ -111,10 +164,8 @@ class reference
 					$this->url = $response['url'];
 				}
 				if (isset($response['language'])){
-					$this->lang = preg_replace('/^(\w\w\w?)-?.*/', '$1', strtolower($response['language']));
-					if($this->lang == 'eng'){
-						$this->lang =  'en';
-					}
+					self::setLanguage(preg_replace('/^(\w\w\w?)-?.*/', '$1', strtolower($response['language'])));
+					
 				}
 				if (isset($response['title'])){
 					$this->title = trim(strip_tags($response['title']));
@@ -124,9 +175,8 @@ class reference
 				foreach ($response['creators'] as $value) {
 					$authors[] = trim(strip_tags($value['firstName']." ".$value['lastName']));
 				}
-				$authors = array_unique($authors);
-				$this->authors = implode("|", $authors);
-				$this->authors = preg_replace('/\b[A-Z]+\b/', "", $this->authors); //CNN KTVN
+				self::setAuthors($authors);
+				
 				if (isset($response['date'])){
 					$this->pubdate  = $response['date'];
 				}
@@ -134,13 +184,16 @@ class reference
 		}
 	}
 	private function getHostVariations(){
-		$host1 = parse_url($this->url)['host'];
-		$host_parts = explode(".", $host1);
+		$hosts = array();
+		$hosts[] = parse_url($this->url)['host'];
+		$host_parts = explode(".", $hosts[0]);
 		array_shift($host_parts);
-		$host2  = implode(".", $host_parts);
+		if (count($host_parts) > 1){
+			$hosts[]  = implode(".", $host_parts);
+		}
 		$combos = combos(array(array("http://", "https://"), 
 							   array("www.", ""), 
-							   array($host1, $host2), 
+							   $hosts, 
 							   array("/", "")));
 		$urls = array();
 		foreach ($combos as $combo) {
