@@ -87,7 +87,7 @@ class reference
 		}
 		$this->authors = preg_replace('/\bCNN\b/', "", $this->authors);
 		if (preg_match('/^[A-Z \W]+$/', $this->authors)) {
-			$this->authors = ucfirst(strtolower($this->authors));
+			$this->authors = ucwords(strtolower($this->authors));
 		}
 	}
 	public function getAuthors(){
