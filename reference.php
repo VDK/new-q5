@@ -132,13 +132,13 @@ class reference
 				//P123 = publisher
 				$qs .= '|S123|'.$this->publisherQID;
 			}
+			$qs .= "|S407|".$this->langQID;
 			foreach (explode("|", $this->authors) as $author) {
 				//P2093 author name string
 				if($author != ""){
 					$qs .= '|S2093|"'.$author.'"';
 				}
 			}
-			$qs .= "|S407|".$this->langQID;
 			if ($this->pubdate != null){
 				//P577 = publication date
 				$qs .= '|S577|+'.date("Y-m-d",$this->pubdate).'T00:00:00Z/11';

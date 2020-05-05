@@ -28,14 +28,14 @@ if (isset($_POST['fullname'])){
   $person1->setAge($_POST['age']);
   $person1->setDescription($_POST['description']);
   
-  $dod = " ".trim(strip_tags($_POST['dod']));
   //set Date of Death
-  if ($dod != ""){
-    $date = new DateTime();
+  $dod = " ".trim(strip_tags($_POST['dod']));
+  if ($dod != " "){
+    $today = new DateTime();
     // makes in possible to input "last friday -1 weeks"
-    if (!strpos("last ", $dod)){ 
+    if (!strripos("last ", $dod)){ 
       for ( $days = 7;  $days--;) {
-        $dayOfWeek = $date->modify( '+1 days' )->format( 'l' );
+        $dayOfWeek = $today->modify( '+1 days' )->format( 'l' );
         if (strripos($dod, $dayOfWeek) != false){
           $person1->setDOD ('last '.$dayOfWeek);
         }
@@ -46,7 +46,7 @@ if (isset($_POST['fullname'])){
     }
     else{
       for ($months=0; $months < 11; $months++) { 
-         $month = $date->modify( '+1 months' )->format( 'F' );
+         $month = $today->modify( '-1 months' )->format( 'F' );
          if (strripos($dod, $month) != false){
             $person1->setDOD($month, 10);
          }
@@ -128,18 +128,18 @@ function concatWithRef($qs, $reference){
 
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <div class="container" style="margin-top: 10">
+  <div class="container">
     <div class="row">
         <form class="form-wrapper"  method="POST"  target='_self' id="form"	>
-			<div style='color:red; clear:both;'><?php echo $error; ?></div>
+			<div class="error"><?php echo $error; ?></div>
 		   <div> 
         <div class="flex">
           <h1 id="region_label"><?php echo $region->getLabel();?></h1>
-          <button type="button" id="up_button" style="<?php echo ($region->getParentQID() == null) ? "display:none": "";?>">up</button>
+          <button type="button" id="up_button" class="<?php echo ($region->getParentQID() == null) ? "hidden": "";?>">up</button>
         </div>
         <input type="hidden" id="selected_region" name="selected_region" value="<?php echo $region->getQID();?>">
         <input type="hidden" id="parent" name="parent" value="<?php echo $region->getParentQID();?>">
-        <div id="region_selection" style="<?php echo (count($region->getParts()) > 0)? "" : "display:none";?>">
+        <div id="region_selection" class="<?php echo (count($region->getParts()) > 0)? "" : "hidden";?>">
         <label for="region">Choose a region:</label>
           <select id="region">
             <option/>
