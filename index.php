@@ -151,6 +151,9 @@ function concatWithRef($qs, $reference){
            foreach ($region->getParts() as $qid => $label) {
              echo "<option value='".$qid."'>".$label."</option>\n";
            }
+           if ($region->getQID() == 'Q81068910'){
+            echo "<option value='Q83873577'>United States</option>\n";
+           }
            ?>
          </select>
        </div>
