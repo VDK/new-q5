@@ -86,7 +86,7 @@ class reference
 			$this->authors = trim(strip_tags($value));
 		}
 		$this->authors = preg_replace('/\bCNN\b/', "", $this->authors);
-		if (preg_match('/^[A-Z \W]+$/', $this->authors)) {
+		if (preg_match('/^[\p{Lu} \W]+$/', $this->authors)) {
 			$this->authors = ucwords(strtolower($this->authors));
 		}
 	}
@@ -173,7 +173,15 @@ class reference
 					$this->title = preg_replace("/^(.+?)\|/", "$1", $this->title);
 				}
 				foreach ($response['creators'] as $value) {
-					$authors[] = trim(strip_tags($value['firstName']." ".$value['lastName']));
+					$author = trim(strip_tags($value['firstName']." ".$value['lastName']));
+					if (strpos($author, " and ")){
+						$authors = split(" and ", $author);
+						$authors[] = $authors[0];
+						$authors[] = $authors[1];
+					}
+					elseif (!strtotime($author)){
+						$authors[] = $author;
+					}
 				}
 				self::setAuthors($authors);
 				
@@ -186,6 +194,7 @@ class reference
 	private function getHostVariations(){
 		$hosts = array();
 		$hosts[] = parse_url($this->url)['host'];
+		//host2: name without the "www."
 		$host_parts = explode(".", $hosts[0]);
 		array_shift($host_parts);
 		if (count($host_parts) > 1){

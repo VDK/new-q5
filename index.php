@@ -4,16 +4,9 @@ include_once 'reference.php';
 include_once 'region.php';
 $error = '';
 $qs = false;
-$region = new Region('Q81068910'); //19-20 coronavirus pandemic
 
-if(isset($_COOKIE['selected_region'])){
-  $region->setQID($_COOKIE['selected_region']);
-}
 if (isset($_POST['fullname'])){
-  $region->setQID($_POST['selected_region']);
-
-  setcookie("selected_region", $region->getQID());
-
+ 
   $reference1 = new Reference(
     $_POST['ref_url'], 
     $_POST['ref_lang'],
@@ -30,6 +23,7 @@ if (isset($_POST['fullname'])){
   $person1->setQID($_POST['person_QID']);
   $person1->setName($_POST['fullname']);
   $person1->setAge($_POST['age']);
+  $person1->setDOB($_POST['dob']);
   $person1->setDescription($_POST['description']);
   
   //set Date of Death
@@ -41,7 +35,13 @@ if (isset($_POST['fullname'])){
       for ( $days = 7;  $days--;) {
         $dayOfWeek = $today->modify( '+1 days' )->format( 'l' );
         if (strripos($dod, $dayOfWeek) != false){
-          $person1->setDOD ('last '.$dayOfWeek." ".date("Y-m-d", $pubDate));
+          if ($reference1->getPubDate() != null 
+            && $dayOfWeek == date('l',$reference1->getPubDate())){
+            $person1->setDOD(date("Y-m-d",$reference1->getPubDate()));
+          }
+          else{
+            $person1->setDOD ('last '.$dayOfWeek." ".date("Y-m-d", $pubDate));
+          }
         }
       }
     }
@@ -58,7 +58,13 @@ if (isset($_POST['fullname'])){
     }
   }
   //end DOD
-  
+  $customQS = "";
+  if (isset($_POST['qs'])){
+    $customQS = trim(strip_tags($_POST['qs']));
+    if(!preg_match('/[\w\W]+/', $customQS)){
+      $customQS = null;
+    }
+  }
   
 	if (!$person1->getQID()){
     $qs .= "CREATE
@@ -68,16 +74,16 @@ LAST|Lfr|\"".$person1->getName()."\"
 LAST|Lnl|\"".$person1->getName()."\"
 LAST|Den|\"".$person1->getDescription()."\"
 LAST|P31|Q5
-".$region->getNationality('qs');
+";
   }
   $qs .= "\n".$person1->getName('qs')
-  .concatWithRef("\nLAST|P793|".$region->getQID(), $reference1->getQS()) 
+  
   .concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
   .concatWithRef("\n".$person1->getDOD('qs').$person1->getAge('qs'), $reference1->getQS())
-  ."\n".$reference1->getDescribedAtUrlQS()
-  .concatWithRef("\nLAST|P1196|Q3739104", $reference1->getQS()) //manner of death = natural
-  .concatWithRef("\nLAST|P509|Q84263196", $reference1->getQS()) //cause  of death = COVID-19
-  .concatWithRef("\nLAST|P1050|Q84263196|P1534|Q4|P582|+".date('Y-m-d', $person1->getDOD()).'T00:00:00Z/'.$person1->getDODAccuracy(), $reference1->getQS());//medical condition = COVID-19
+  .concatWithRef("\n".$customQS, $reference1->getQS())
+  ."\n".$reference1->getDescribedAtUrlQS();
+  
+  
 
   if ($person1->getQID()){
     $qs = preg_replace('/^LAST/m', $person1->getQID(), $qs);
@@ -99,7 +105,7 @@ function concatWithRef($qs, $reference){
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>covid-obid</title>
+  <title>New Q5</title>
   <meta name="description" content="">
   <meta name="author" content="1Veertje">
 
@@ -136,28 +142,7 @@ function concatWithRef($qs, $reference){
     <div class="row">
         <form class="form-wrapper"  method="POST"  target='_self' id="form"	>
 			<div class="error"><?php echo $error; ?></div>
-		   <div> 
-        <div class="flex">
-          <h1 id="region_label"><?php echo $region->getLabel();?></h1>
-          <button type="button" id="up_button" class="<?php echo ($region->getParentQID() == null) ? "hidden": "";?>">up</button>
-        </div>
-        <input type="hidden" id="selected_region" name="selected_region" value="<?php echo $region->getQID();?>">
-        <input type="hidden" id="parent" name="parent" value="<?php echo $region->getParentQID();?>">
-        <div id="region_selection" class="<?php echo (count($region->getParts()) > 0)? "" : "hidden";?>">
-        <label for="region">Choose a region:</label>
-          <select id="region">
-            <option/>
-           <?php
-           foreach ($region->getParts() as $qid => $label) {
-             echo "<option value='".$qid."'>".$label."</option>\n";
-           }
-           if ($region->getQID() == 'Q81068910'){
-            echo "<option value='Q83873577'>United States</option>\n";
-           }
-           ?>
-         </select>
-       </div>
-        <p>
+		  
         Personal details:
         <div>
         <div class="flex">
@@ -167,10 +152,14 @@ function concatWithRef($qs, $reference){
         <div><label for="age">age</label>
         <input type="text" id="age"  name='age' style="width:100px;"></div>
       </div>
+       <label for="dob">date of birth</label>
+        <input type="text" id="dob"  name='dob'  >
         <label for="dod">date of death</label>
-        <input type="text" id="dod"  name='dod' placeholder="Recently" >
+        <input type="text" id="dod"  name='dod' >
         <label for="description">short description</label>
         <input type="text" id="description" name='description' >
+        <label for="qs">custom QuickStatement</label>
+        <input type="text" id="qs" name='qs' >
         </div>
         <div id='possible_match' >
           <input type="hidden" name="person_QID" id="person_QID">
@@ -196,7 +185,6 @@ function concatWithRef($qs, $reference){
 		    <input type="submit" class='button' value="go" id="submit">
 		</div> 	
 		</form>
-	</div>
 
 <?php
 if ($qs ){?>

@@ -18,7 +18,7 @@ class Person
 	{
 		//default accuracy is set to to month so
 		//in the first week of a new month the previous month should be used. 
-		$this->doD = strtotime("-5 days");
+		// $this->doD = strtotime("-5 days");
 	}
 	public function setDescription($value){
 		$this->description = trim(strip_tags($value));
@@ -73,7 +73,7 @@ class Person
 		}
 	}
 	public function setDOB($value){
-		$this->doB = trim(strip_tags($value));
+		$this->doB = strtotime($value);
 	}
 	public function getDOB($format = ''){
 		if ($this->doB != null && $format == 'qs'){

@@ -36,7 +36,13 @@ $(function(){
           $('#ref_lang').val(data['language']);
           $('#ref_authors').val(data['authors']);
           $('#ref_pubdate').val(data['pubdate']);
-  		});
+  		}).fail(function(){
+        $('#ref_params').removeClass('spindle');
+          $('#ref_title').attr('readonly', false);
+          $('#ref_lang').attr('readonly', false);
+          $('#ref_authors').attr('readonly', false);
+          $('#ref_pubdate').attr('readonly', false);
+      });
   	});
     //match with existing Wikidata item
     $('#fullname').on('change', function(){
