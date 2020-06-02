@@ -175,9 +175,7 @@ class reference
 				foreach ($response['creators'] as $value) {
 					$author = trim(strip_tags($value['firstName']." ".$value['lastName']));
 					if (strpos($author, " and ")){
-						$authors = split(" and ", $author);
-						$authors[] = $authors[0];
-						$authors[] = $authors[1];
+						$authors = array_merge($authors, split(" and ", $author));
 					}
 					elseif (!strtotime($author)){
 						$authors[] = $author;

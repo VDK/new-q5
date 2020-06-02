@@ -13,6 +13,7 @@ class Person
 	private $description = null;
 	private $fullName = null;
 	private $doDAccuracy = 10; //month
+	private $doBAccuracy = "APROX"; //approximate
 
 	function __construct()
 	{
@@ -27,15 +28,16 @@ class Person
 		return $this->description;
 	}
 	public function setDOD($value, $accuracy = 11){
-		$this->doD = strtotime($value);
-		$this->doDAccuracy = $accuracy;
-		self::updateDOB();
+		if (trim($value) != ''){
+			$this->doD = strtotime($value);
+			$this->doDAccuracy = $accuracy;
+		}
 	}
 	public function getDODAccuracy(){
 		return $this->doDAccuracy;
 	}
 	public function getDOD($format=''){
-		if ( $format == 'qs'){
+		if ( $this->doD != null && $format == 'qs' ){
 		   return "LAST|P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy;
 		}
 		else{
@@ -55,16 +57,13 @@ class Person
 		$value = trim(strip_tags($value));
 		if (preg_match('/^\d+$/', $value)){
 			$this->age = $value;
-			self::updateDOB();
 		}
 
 	}
-	private function updateDOB(){
-		if ($this->age != null){
-			$this->doB =  strtotime("-".$this->age." years", $this->doD); 
-		}
-	}
 	public function getAge($format=''){
+		if ($this->age == null && $this->doD != null && $this->doB != null){
+			$this->age =  floor( ( $this->doD - $this->doB ) / 31556926);
+		}
 		if ($this->age != null && $format == 'qs'){
 			return  "|P3629|".$this->age.'U24564698'; //years old
 		}
@@ -72,19 +71,34 @@ class Person
 			return $this->age;
 		}
 	}
-	public function setDOB($value){
-		$this->doB = strtotime($value);
+	public function setDOB($value, $accuracy = 11){
+		if (trim($value) != ''){
+			$this->doB = strtotime($value);
+			$this->doBAccuracy = $accuracy;
+		}
+	}
+
+	public function getDOBAccuracy(){
+		return $this->doDAccuracy;
 	}
 	public function getDOB($format = ''){
+		if ($this->doB == null && $this->age != null && $this->doD != null){
+			$this->doB = strtotime("-".$this->age." years", $this->doD); 
+		}
 		if ($this->doB != null && $format == 'qs'){
-			//rounding off DOB
-			$year = date("Y", $this->doB);
-			if ((int)date("n", $this->doB) < 7){
-				$year = $year -1;
+			if ($this->doBAccuracy == "APROX"){
+				$year = date('Y', $this->doB); 
+				if ((int)date("n", $this->doB) < 7){
+					$year--; 
+				}
+
+				return"LAST|P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
+				.'|P1319|+'.date("Y-m-d", strtotime("-1 years +1 days", $this->doB))."T00:00:00Z/".$this->doDAccuracy.
+			     '|P1326|+'.date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doDAccuracy;
 			}
-			return "LAST|P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'.
-		     '|P1326|+'.date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doDAccuracy.
-			 '|P1319|+'.date("Y-m-d", strtotime("-1 years +1 days", $this->doB))."T00:00:00Z/".$this->doDAccuracy;
+			else{
+				return "LAST|P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
+			}
 		}
 		else{
 			return $this->doB;
