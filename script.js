@@ -88,7 +88,7 @@ function sendQS(){
   var qs  = $('#quickstatement').val().trim();
   qs = qs.split(/\n/).join('||');
   qs = encodeURIComponent(qs);
-  var url = "https://tools.wmflabs.org/quickstatements/#v1="+qs;
+  var url = "https://quickstatements.toolforge.org/#v1="+qs;
   var win = window.open(url, '_blank');
   win.focus();
 }
