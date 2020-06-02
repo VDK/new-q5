@@ -1,19 +1,5 @@
-$( document ).ready(function(){
-	// ltrHack();
-});
 
 $(function(){
-    //navigate up and down regions affected by COVID-19
-  	$('#up_button').on('click', function () {
-  		if($('#parent').val().match(/^Q\d+$/)){
-  			loadRegion($('#parent').val());
-  		}
-  	});
-  	$('#region').on('change', function () {
-  		if($('#region').val().match(/^Q\d+$/)){
-  			loadRegion ($('#region').val());
-  		}
-  	});
     //CITOID MAGIC
   	$('#ref_url').on('change', function(){
   		var url = encodeURI($('#ref_url').val());
@@ -97,34 +83,7 @@ function selectOption(){
   $(this).removeClass('option');
 }
 
-function loadRegion(qid){	
-	$.getJSON( 'query.php', {
-			qid: qid
-		}).done(function( data ) {
-			$('#region_label').text(data['label']);
-			$('#selected_region').val(data['qid']);
-		$('#parent').val(data['parent']);
-			// enable\disable navigation upwards
-		if(data['parent'] == null ){
-			$('#up_button').hide();
-		}
-		else{
-		  $('#up_button').show();
-		}
-		if (data['regions'].length == 0){
-			$('#region_selection').hide();
-		}
-		else{
-			$('#region_selection').show();
-			//refill dropdown
-			$('#region').empty().append("<option/>");
-			var regions = data['regions'];
-			for(var region in regions){
-				$('#region').append("<option value='"+region+"'>"+regions[region]+"</option>");
-			}
-		}
-	});
-}
+
 function sendQS(){
   var qs  = $('#quickstatement').val().trim();
   qs = qs.split(/\n/).join('||');
