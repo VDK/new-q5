@@ -9,7 +9,8 @@ class Person
 	private $doD = null;
 	private $doB = null;
 	private $age = null;
-	private $qid = null;
+	private $qid = "LAST";
+	private $customQS = '';
 	private $description = null;
 	private $fullName = null;
 	private $doDAccuracy = 10; //month
@@ -38,19 +39,35 @@ class Person
 	}
 	public function getDOD($format=''){
 		if ( $this->doD != null && $format == 'qs' ){
-		   return "LAST|P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy;
+		   return $this->qid."|P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy.self::getAge('qs');
 		}
 		else{
 		   return $this->doD;
 		}
 	}
+	public function setCustomQS($value){
+		$this->customQS = trim(strip_tags($value));
+	}
+
+	public function getCustomQS($format = ''){
+		if ($this->customQS != null && $format == 'qs'){
+			return $this->qid."|".$this->customQS;
+		}
+		else{
+			return $this->customQS;
+		}
+	}
+
 	public function setQID($value){
 		$value = trim(strip_tags($value));
 		if(preg_match('/^Q\d+$/', $value)){
 			$this->qid = $value;
 		}
 	}
-	public function getQID(){
+	public function getQID($format = ''){
+		if ($this->qid == "LAST" && $format != 'qs'){
+			return null;
+		}
 		return $this->qid;
 	}
 	public function setAge($value){
@@ -92,12 +109,12 @@ class Person
 					$year--; 
 				}
 
-				return"LAST|P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
+				return $this->qid."|P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
 				.'|P1319|+'.date("Y-m-d", strtotime("-1 years +1 days", $this->doB))."T00:00:00Z/".$this->doDAccuracy.
 			     '|P1326|+'.date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doDAccuracy;
 			}
 			else{
-				return "LAST|P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
+				return $this->qid."|P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
 			}
 		}
 		else{
@@ -159,7 +176,7 @@ class Person
 			$qs = '';
 			foreach ($properties as $key => $property) {
 				foreach ($property as $value) {
-					$qs .= "LAST|".$key."|".$value."\n";
+					$qs .= $this->qid."|".$key."|".$value."\n";
 				}
 			}
 			$qs = preg_replace("/\n$/", "", $qs);

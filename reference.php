@@ -95,7 +95,7 @@ class reference
 	}
 	public function getDescribedAtUrlQS(){
 		if ($this->url != null){
-			$qs = "LAST|P973|\"".$this->url."\"";
+			$qs = "|P973|\"".$this->url."\"";
 			if ($this->title != null){
 				$qs .= '|P1476|'.$this->lang.':"'.$this->title.'"';
 			}

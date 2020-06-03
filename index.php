@@ -1,7 +1,6 @@
 <?php
 include_once 'person.php';
 include_once 'reference.php';
-include_once 'region.php';
 $error = '';
 $qs = false;
 
@@ -27,6 +26,7 @@ if (isset($_POST['fullname'])){
   $person1->setName($_POST['fullname']);
   $person1->setAge($_POST['age']);
   $person1->setDescription($_POST['description']);
+  $person1->setCustomQS($_POST['qs']);
   
   //set Date of Death
   $dod = " ".trim(strip_tags($_POST['dod']));
@@ -36,7 +36,7 @@ if (isset($_POST['fullname'])){
       for ( $days = 7;  $days--;) {
         $dayOfWeek = $loopDate->modify( '+1 days' )->format( 'l' );
         if (strripos($dod, $dayOfWeek) != false){
-          if ($dayOfWeek ==  $today->format('l')){
+          if ($dayOfWeek == $today->format('l')){
             $person1->setDOD($today->format("Y-m-d"));
           }
           else{
@@ -75,10 +75,6 @@ if (isset($_POST['fullname'])){
   }
   
 
-  $customQS = "";
-  if (isset($_POST['qs'])){
-    $customQS = trim(strip_tags($_POST['qs']));
-  }
   
 	if (!$person1->getQID()){
     $qs .= "CREATE
@@ -93,16 +89,11 @@ LAST|P31|Q5
   $qs .= "\n".$person1->getName('qs')
   
   .concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
-  .concatWithRef("\n".$person1->getDOD('qs').$person1->getAge('qs'), $reference1->getQS())
-  .concatWithRef("\n".$customQS, $reference1->getQS())
-  ."\n".$reference1->getDescribedAtUrlQS();
+  .concatWithRef("\n".$person1->getDOD('qs'), $reference1->getQS())
+  .concatWithRef("\n".$person1->getCustomQS('qs'), $reference1->getQS())
+  ."\n".$person1->getQID('qs').$reference1->getDescribedAtUrlQS();
   
   
-
-  if ($person1->getQID()){
-    $qs = preg_replace('/^LAST/m', $person1->getQID(), $qs);
-  }
-
 }
 
 function concatWithRef($qs, $reference){
