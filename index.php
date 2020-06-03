@@ -26,7 +26,6 @@ if (isset($_POST['fullname'])){
   $person1->setName($_POST['fullname']);
   $person1->setAge($_POST['age']);
   $person1->setDescription($_POST['description']);
-  $person1->setCustomQS($_POST['qs']);
   
   //set Date of Death
   $dod = " ".trim(strip_tags($_POST['dod']));
@@ -49,10 +48,15 @@ if (isset($_POST['fullname'])){
       $person1->setDOD($dod);
     }
     else{
+      //"if MONTH string detected take 'last MONTH' as dod"
       for ($months=0; $months < 11; $months++) { 
          $month = $loopDate->modify( '-1 months' )->format( 'F' );
          if (strripos($dod, $month) != false){
-            $person1->setDOD($month, 10);
+            $date = new DateTime($month." ".$today->format("Y"));
+            if ($date > $today){
+              $date->modify('-1 years');
+            }
+            $person1->setDOD($date->format("Y-m-d"), 10);
          }
       }
     }
@@ -73,7 +77,12 @@ if (isset($_POST['fullname'])){
         $person1->setDOB($dob, 10);
      }
   }
-  
+  //end DOB
+
+  $customQS = "";
+  if (isset($_POST['qs'])){
+    $customQS = trim(strip_tags($_POST['qs']));
+  }
 
   
 	if (!$person1->getQID()){
@@ -86,21 +95,31 @@ LAST|Den|\"".$person1->getDescription()."\"
 LAST|P31|Q5
 ";
   }
-  $qs .= "\n".$person1->getName('qs')
+  $qs .= 
+   appendProp($person1->getQID(), $person1->getName('qs'))
   
-  .concatWithRef("\n".$person1->getDOB('qs'), $reference1->getQS())
-  .concatWithRef("\n".$person1->getDOD('qs'), $reference1->getQS())
-  .concatWithRef("\n".$person1->getCustomQS('qs'), $reference1->getQS())
-  ."\n".$person1->getQID('qs').$reference1->getDescribedAtUrlQS();
+  .appendProp($person1->getQID(), $person1->getDOB('qs'), $reference1->getQS())
+  .appendProp($person1->getQID(), $person1->getDOD('qs'), $reference1->getQS())
+  .appendProp($person1->getQID(), $customQS, $reference1->getQS())
+  .appendProp($person1->getQID(), $reference1->getDescribedAtUrlQS());
   
   
+}
+function appendProp($qid = null, $prop = null, $ref = null){
+  $qs = '';
+  if ($qid == null){
+    $qid = "LAST";
+  }
+  $propLines = explode("\n", $prop);
+  foreach ($propLines as $propLine) {
+    if (trim($propLine) != ''){
+      $qs .= "\n".$qid."|".$propLine.$ref;
+    }
+  }
+  return $qs;
+
 }
 
-function concatWithRef($qs, $reference){
-  if (trim($qs) != ""){
-    return $qs.$reference;
-  }
-}
 
 ?>
 <!DOCTYPE html>

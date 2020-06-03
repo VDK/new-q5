@@ -9,8 +9,7 @@ class Person
 	private $doD = null;
 	private $doB = null;
 	private $age = null;
-	private $qid = "LAST";
-	private $customQS = '';
+	private $qid = null;
 	private $description = null;
 	private $fullName = null;
 	private $doDAccuracy = 10; //month
@@ -39,24 +38,13 @@ class Person
 	}
 	public function getDOD($format=''){
 		if ( $this->doD != null && $format == 'qs' ){
-		   return $this->qid."|P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy.self::getAge('qs');
+		   return "P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy."|".self::getAge('qs');
 		}
 		else{
 		   return $this->doD;
 		}
 	}
-	public function setCustomQS($value){
-		$this->customQS = trim(strip_tags($value));
-	}
-
-	public function getCustomQS($format = ''){
-		if ($this->customQS != null && $format == 'qs'){
-			return $this->qid."|".$this->customQS;
-		}
-		else{
-			return $this->customQS;
-		}
-	}
+	
 
 	public function setQID($value){
 		$value = trim(strip_tags($value));
@@ -64,10 +52,7 @@ class Person
 			$this->qid = $value;
 		}
 	}
-	public function getQID($format = ''){
-		if ($this->qid == "LAST" && $format != 'qs'){
-			return null;
-		}
+	public function getQID(){
 		return $this->qid;
 	}
 	public function setAge($value){
@@ -82,7 +67,7 @@ class Person
 			$this->age =  floor( ( $this->doD - $this->doB ) / 31556926);
 		}
 		if ($this->age != null && $format == 'qs'){
-			return  "|P3629|".$this->age.'U24564698'; //years old
+			return  "P3629|".$this->age.'U24564698'; //years old
 		}
 		else{
 			return $this->age;
@@ -109,12 +94,12 @@ class Person
 					$year--; 
 				}
 
-				return $this->qid."|P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
+				return "P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
 				.'|P1319|+'.date("Y-m-d", strtotime("-1 years +1 days", $this->doB))."T00:00:00Z/".$this->doDAccuracy.
 			     '|P1326|+'.date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doDAccuracy;
 			}
 			else{
-				return $this->qid."|P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
+				return "P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
 			}
 		}
 		else{
@@ -176,10 +161,9 @@ class Person
 			$qs = '';
 			foreach ($properties as $key => $property) {
 				foreach ($property as $value) {
-					$qs .= $this->qid."|".$key."|".$value."\n";
+					$qs .= $key."|".$value."\n";
 				}
 			}
-			$qs = preg_replace("/\n$/", "", $qs);
 			return $qs;
 		}
 		else{

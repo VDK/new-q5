@@ -1,6 +1,5 @@
 <?php
-include_once 'region.php';
-include_once 'reference.php';
+include_once 'citoid_ref.php';
 const ORATOR_ENDPOINT= 'https://tools.wmflabs.org/orator-matcher/query.php';
 //API interface for navigating up and down the regions affected by the novel coronavirus
 
@@ -12,29 +11,25 @@ $context = stream_context_create(
     )
 );
 
-if (isset($_GET['qid'])){
-	$qid  = strip_tags($_GET['qid']);
-	if (preg_match('/^Q\d+$/', $qid)){
-		$region = new Region($qid);
-		echo json_encode(array( 
-			"qid" => $region->getQID(),
-			"label"=> $region->getLabel(),
-			"parent"  => $region->getParentQID(),
-			"regions" => $region->getParts()));
-	}		
-}
+
 
 if(isset($_GET['url'])){
 	$url = urldecode(strip_tags($_GET['url']));
-	$ref = new Reference($url);
-	$ref->loadCitoid();
+	$ref = new citoidRef($url);	
+	$date = '';
+	if ($ref->getPubDate() != null){
+		$date = date("Y-m-d", $ref->getPubDate());
+	}
 	echo json_encode(array(
 		"url" 		=> $ref->getURL(),
 		"title" 	=> $ref->getTitle(),
 		"language" 	=> $ref->getLanguage(),
 		"authors" 	=> $ref->getAuthors(),
-		"pubdate" 	=> $ref->getPubDate()
+		"pubdate" 	=> $date
 	));
+
+	
+
 }
 
 if(isset($_GET['srsearch'])){

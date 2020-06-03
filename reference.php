@@ -13,7 +13,6 @@ class reference
 	private $authors = "";
 	private $title   = null;
 	private $pubdate = null;
-	const CITOID = 'https://en.wikipedia.org/api/rest_v1/data/citation/wikibase/';
 	function __construct($url='', $lang='', $authors = '', $title = '', $pubdate = ''){
 		self::setURL($url);
 		self::setLanguage($lang);
@@ -24,42 +23,38 @@ class reference
 	public function setURL($value){
   		if(filter_var($value, FILTER_VALIDATE_URL)){
 			$this->url = $value;
-			
-			$urls = self::getHostVariations();
-			
-			$query = 'SELECT ?qid WHERE {';
-			foreach ($urls as $url) {
-				$query .= "{?item wdt:P856 <".$url."> }\n union";
-			}
-			$query = preg_replace("/union$/", "", $query);
-
-			$query .= 'BIND(REPLACE(STR(?item), "http://www.wikidata.org/entity/", "") AS ?qid)	}LIMIT 1';
-			$data = sparqlQuery($query);
-			foreach ($data['results']['bindings'] as $item) {
-				$this->publisherQID =  $item['qid']['value'];
-			}
+			$this->publisherQID = null;
+			$this->lang  = 'en';
+			$this->langQID = 'Q1860'; //English
+			$this->authors = "";
+			$this->title   = null;
+			$this->pubdate = null;
 		}
 	}
 	public function getURL(){
 		return $this->url;
 	}
 	public function setPubDate($value){
-		$this->pubdate = strtotime($value);
+		if (trim($value) != ''){
+			$this->pubdate = strtotime($value);
+		}
 	}
 	public function getPubDate(){
 		return $this->pubdate;
 	}
 	public function setTitle($value){
 		$this->title = strip_tags($value);
+		//whatevere's after the pipe is probably "| Local Newspaper"
+		$this->title = preg_replace("/^(.+?)\|.+/", "$1", $this->title);
+		$this->title = trim($this->title);
 	}
 	public function getTitle(){
 		return $this->title;
 	}
 	public function setLanguage($value){
 		$value = trim(strtolower(strip_tags($value)));
-		if (preg_match('/\w\w\w?(-\w\w\w?)?$/', $value) && 
-			!in_array($value, array("en", "eng"))){
-			$this->lang = $value;
+		if ( $value != '' && !in_array($value, array("en", "eng"))){
+			$this->lang = preg_replace('/^(\w{2,3})/', "$1", $value);
 			$query = 'SELECT DISTINCT ?qid  WHERE {
                 ?language wdt:P424 "'.$this->lang.'" . 
        			?language wdt:P31 ?subclass_language.
@@ -85,6 +80,8 @@ class reference
 		else{
 			$this->authors = trim(strip_tags($value));
 		}
+
+		$this->authors = str_replace(" and ", "|" ,$this->authors);
 		$this->authors = preg_replace('/\bCNN\b/', "", $this->authors);
 		if (preg_match('/^[\p{Lu} \W]+$/', $this->authors)) {
 			$this->authors = ucwords(strtolower($this->authors));
@@ -95,12 +92,11 @@ class reference
 	}
 	public function getDescribedAtUrlQS(){
 		if ($this->url != null){
-			$qs = "|P973|\"".$this->url."\"";
+			$qs = "P973|\"".$this->url."\"";
 			if ($this->title != null){
 				$qs .= '|P1476|'.$this->lang.':"'.$this->title.'"';
 			}
-			if ($this->publisherQID != null){
-				//P123 = publisher
+			if (self::getPublisherQID() != null){
 				$qs .= '|P123|'.$this->publisherQID;
 			}
 			$qs .= "|P407|".$this->langQID;
@@ -128,7 +124,7 @@ class reference
 			if ($this->title != null){
 				$qs .= '|S1476|'.$this->lang.':"'.$this->title.'"';
 			}
-			if ($this->publisherQID != null){
+			if (self::getPublisherQID() != null){
 				//P123 = publisher
 				$qs .= '|S123|'.$this->publisherQID;
 			}
@@ -151,44 +147,25 @@ class reference
 		}
 		return null;
 	}
-	public function getPublisherQID(){
-		return $this->publisherQID;
-	}
-	public function loadCitoid(){
-		if ($this->url != null){
-			$authors  = array();
-			$response = json_decode(file_get_contents(self::CITOID.urlencode($this->url)),true);
-			if (count($response) == 1){
-				$response = $response[0];
-				if (isset($response['url'])){
-					$this->url = $response['url'];
-				}
-				if (isset($response['language'])){
-					self::setLanguage(preg_replace('/^(\w\w\w?)-?.*/', '$1', strtolower($response['language'])));
-					
-				}
-				if (isset($response['title'])){
-					$this->title = trim(strip_tags($response['title']));
-					//whatevere's after the pipe is probably "| Local Newspaper"
-					$this->title = preg_replace("/^(.+?)\|/", "$1", $this->title);
-				}
-				foreach ($response['creators'] as $value) {
-					$author = trim(strip_tags($value['firstName']." ".$value['lastName']));
-					if (strpos($author, " and ")){
-						$authors = array_merge($authors, split(" and ", $author));
-					}
-					elseif (!strtotime($author)){
-						$authors[] = $author;
-					}
-				}
-				self::setAuthors($authors);
+	public function getPublisherQID($format = ''){
+		if ($this->publisherQID == null && $this->url != null){
+			$urls = self::getHostVariations();
 				
-				if (isset($response['date'])){
-					$this->pubdate  = $response['date'];
-				}
+			$query = 'SELECT ?qid WHERE {';
+			foreach ($urls as $url) {
+				$query .= "{?item wdt:P856 <".$url."> }\n union";
+			}
+			$query = preg_replace("/union$/", "", $query);
+
+			$query .= 'BIND(REPLACE(STR(?item), "http://www.wikidata.org/entity/", "") AS ?qid)	}LIMIT 1';
+			$data = sparqlQuery($query);
+			foreach ($data['results']['bindings'] as $item) {
+				$this->publisherQID =  $item['qid']['value'];
 			}
 		}
+		return $this->publisherQID;
 	}
+	
 	private function getHostVariations(){
 		$hosts = array();
 		$hosts[] = parse_url($this->url)['host'];
