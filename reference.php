@@ -53,8 +53,9 @@ class reference
 	}
 	public function setLanguage($value){
 		$value = trim(strtolower(strip_tags($value)));
+		$value = preg_replace('/^(\w{2,3}).+/', "$1", $value);
 		if ( $value != '' && !in_array($value, array("en", "eng"))){
-			$this->lang = preg_replace('/^(\w{2,3})/', "$1", $value);
+			$this->lang = $value;
 			$query = 'SELECT DISTINCT ?qid  WHERE {
                 ?language wdt:P424 "'.$this->lang.'" . 
        			?language wdt:P31 ?subclass_language.

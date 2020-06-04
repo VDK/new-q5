@@ -13,13 +13,13 @@ class citoidRef extends reference
 			$authors  = array();
 			$test = get_headers($url, 1)[0];
 			if ($test != 'HTTP/1.1 404 Not Found'){
+				self::setURL($url);
 				$response = file_get_contents(self::CITOID.urlencode($url));
 				$response = json_decode($response,true);
 				if (count($response) == 1){
 					$response = $response[0];
 					// echo json_encode($response);die;
 					
-					self::setURL($response['identifiers']['url']);
 					if (isset($response['language'])){
 						self::setLanguage($response['language']);
 					}
