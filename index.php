@@ -31,10 +31,8 @@ if (isset($_POST['fullname'])){
   $dod = " ".trim(strip_tags($_POST['dod']));
   if ($dod != " "){
     // makes in possible to input "last friday -1 weeks"
-    if (preg_match('/^[21]\d{3}$/', $dod)){
-      $person1->setDOD($dod."-01-01", 9);
-    }
-    elseif (!strripos("last ", $dod)){ 
+    
+    if (!strripos("last ", $dod)){ 
       for ( $days = 7;  $days--;) {
         $dayOfWeek = $loopDate->modify( '+1 days' )->format( 'l' );
         if (strripos($dod, $dayOfWeek) != false){
@@ -63,6 +61,9 @@ if (isset($_POST['fullname'])){
          }
       }
     }
+    if (preg_match('/^ [21]\d{3}$/', $dod)){
+      $person1->setDOD($dod."-01-01", 9);
+    }
   }
   //end DOD
   //DOB
@@ -76,7 +77,8 @@ if (isset($_POST['fullname'])){
   //reduce accuracy if only month + year:
   for ($months=0; $months < 11; $months++) { 
      $month = $loopDate->modify( '-1 months' )->format( 'F' );
-     if (preg_match('/^'.$month.' [12]\d{3}$/i' , $dob)  ){
+     if (preg_match('/^'.$month.'\s*[12]\d{3}$/i' , $dob) 
+      || preg_match('/^[12]\d{3}\s*'.$month.'$/i' , $dob)  ){
         $person1->setDOB($dob, 10);
      }
   }

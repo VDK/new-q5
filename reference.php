@@ -148,7 +148,7 @@ class reference
 		}
 		return null;
 	}
-	public function getPublisherQID($format = ''){
+	public function getPublisherQID(){
 		if ($this->publisherQID == null && $this->url != null){
 			$urls = self::getHostVariations();
 				

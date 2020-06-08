@@ -38,7 +38,7 @@ class Person
 	}
 	public function getDOD($format=''){
 		if ( $this->doD != null && $format == 'qs' ){
-		   return "P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy."|".self::getAge('qs');
+		   return "P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy.self::getAge('qs');
 		}
 		else{
 		   return $this->doD;
@@ -67,7 +67,7 @@ class Person
 			$this->age =  floor( ( $this->doD - $this->doB ) / 31556926);
 		}
 		if ($this->age != null && $format == 'qs'){
-			return  "P3629|".$this->age.'U24564698'; //years old
+			return  "|P3629|".$this->age.'U24564698'; //years old
 		}
 		else{
 			return $this->age;
