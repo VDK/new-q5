@@ -148,10 +148,10 @@ class Person
 	    				//set gender based on first name
 	    				switch ($result['gen']['value']) {
 	    					case 'Q11879590': //female given name 
-	    						$properties['P21'][] = 'Q6581072|S3452|Q202444';
+	    						$properties['P21'][] = 'Q6581072|S887|Q202444';
 	    						break;
 	    					case 'Q12308941': //male given name 
-	    						$properties['P21'][] = 'Q6581097|S3452|Q202444';
+	    						$properties['P21'][] = 'Q6581097|S887|Q202444';
 	    						break;
 	    				}
 	    			}

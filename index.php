@@ -1,18 +1,27 @@
 <?php
 include_once 'person.php';
 include_once 'reference.php';
+include_once 'legacy_ref.php';
 $error = '';
 $qs = false;
 
 if (isset($_POST['fullname'])){
+  $url = $_POST['ref_url'];
  
+  if (preg_match('/.*legacy\.com/i', parse_url($url)['host'])){
+    $reference1 = new legacyRef($url, $_POST['fullname']);
+  }
+  else{
+    $reference1 = new Reference(
+      $_POST['ref_url'], 
+      $_POST['ref_lang'],
+      $_POST['ref_authors'], 
+      $_POST['ref_title'], 
+      $_POST['ref_pubdate']);
+  }
 
-  $reference1 = new Reference(
-    $_POST['ref_url'], 
-    $_POST['ref_lang'],
-    $_POST['ref_authors'], 
-    $_POST['ref_title'], 
-    $_POST['ref_pubdate']);
+
+
   $loopDate = new DateTime();
   $today    = new DateTime();
   if ($reference1->getPubDate() != null){
