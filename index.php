@@ -90,7 +90,7 @@ if (isset($_POST['fullname'])){
   }
 
   
-	if (!$person1->getQID()){
+  if (!$person1->getQID()){
     $qs .= "CREATE
 LAST|Len|\"".$person1->getName()."\"
 LAST|Lde|\"".$person1->getName()."\"
@@ -169,9 +169,14 @@ function appendProp($qid = null, $prop = null, $ref = null){
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <div class="container">
     <div class="row">
-        <form class="form-wrapper"  method="POST"  target='_self' id="form"	>
-			<div class="error"><?php echo $error; ?></div>
-		  
+        <form class="form-wrapper"  method="POST"  target='_self' id="form" >
+      <div class="error"><?php echo $error; ?></div>
+        <noscript>
+          <div class="error">
+            This site requires JavaScript.
+          </div>
+        </noscript>
+      
         Personal details:
         <div>
         <div class="flex">
@@ -211,25 +216,26 @@ function appendProp($qid = null, $prop = null, $ref = null){
             <input type="text" id="ref_authors"  name="ref_authors" >
           </div>
           <span style="clear:both;"/>
-		    <input type="submit" class='button' value="go" id="submit">
-		</div> 	
-		</form>
+        <input type="submit" class='button' value="go" id="submit">
+    </div>  
+    </form>
 
 <?php
 if ($qs ){?>
    <div class="form-wrapper">
 <textarea id='quickstatement' style="height: 150px;" >
-<?php echo($qs);	?>
+<?php echo($qs);  ?>
 </textarea>
 <a onclick="sendQS()" style="cursor: pointer;">Import QuickStatement</a>
-	</div>
+  </div>
 <?php } ?>
 
+ <footer id="footer"><a href="https://github.com/VDK/New-Q5" target="_blank">Code on GitHub</a> <br/>available under MIT license</footer>
 </div>
 <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 
-	
+  
 </body>
 
 </html>

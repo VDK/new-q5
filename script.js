@@ -72,6 +72,9 @@ $(function(){
     $('#age').on('keyup', function(){
       this.value = this.value.replace(/[^0-9]/gi, '');
     });
+    $('#qs').on('keyup', function(){
+      this.value = this.value.replace(/https:\/\/www\.wikidata\.org\/wiki\/(Property:)?/, '');
+    });
 });
 //select match with existing Wikidata item
 function selectOption(){

@@ -63,7 +63,7 @@ class Person
 
 	}
 	public function getAge($format=''){
-		if ($this->age == null && $this->doD != null && $this->doB != null){
+		if ($this->age == null && $this->doD != null && $this->doB != null && $this->doDAccuracy == 11 && $this->doBAccuracy == 11){
 			$this->age =  floor( ( $this->doD - $this->doB ) / 31556926);
 		}
 		if ($this->age != null && $format == 'qs'){
@@ -148,10 +148,10 @@ class Person
 	    				//set gender based on first name
 	    				switch ($result['gen']['value']) {
 	    					case 'Q11879590': //female given name 
-	    						$properties['P21'][] = 'Q6581072|S3452|Q202444';
+	    						$properties['P21'][] = 'Q6581072|S887|Q69652498';
 	    						break;
 	    					case 'Q12308941': //male given name 
-	    						$properties['P21'][] = 'Q6581097|S3452|Q202444';
+	    						$properties['P21'][] = 'Q6581097|S887|Q69652498';
 	    						break;
 	    				}
 	    			}
