@@ -13,6 +13,7 @@ class reference
 	private $authors = "";
 	private $title   = null;
 	private $pubdate = null;
+	private $today = null;	
 	function __construct($url='', $lang='', $authors = '', $title = '', $pubdate = ''){
 		self::setURL($url);
 		self::setLanguage($lang);
@@ -30,13 +31,14 @@ class reference
 			$this->title   = null;
 			$this->pubdate = null;
 		}
+		$this->today   = new DateTime();
 	}
 	public function getURL(){
 		return $this->url;
 	}
 	public function setPubDate($value){
 		if (trim($value) != ''){
-			$this->pubdate = strtotime($value);
+			$this->pubdate =  DateTime::createFromFormat("Y-m-d",date('Y-m-d',  strtotime($value)));
 		}
 	}
 	public function getPubDate(){
@@ -109,10 +111,10 @@ class reference
 			}
 			if ($this->pubdate != null){
 				//P577 = publication date
-				$qs .= '|P577|+'.date("Y-m-d",$this->pubdate).'T00:00:00Z/11';
+				$qs .= '|P577|+'.$this->pubdate->format( 'Y-m-d' ).'T00:00:00Z/11';
 			}
 			//P813 = retrieved
-			$qs .= '|P813|+'.date('Y-m-d', strtotime("today")).'T00:00:00Z/11'; 
+			$qs .= '|P813|+'.$this->today->format( 'Y-m-d' ).'T00:00:00Z/11'; 
 
 			return $qs;
 		}
@@ -138,10 +140,10 @@ class reference
 			}
 			if ($this->pubdate != null){
 				//P577 = publication date
-				$qs .= '|S577|+'.date("Y-m-d",$this->pubdate).'T00:00:00Z/11';
+				$qs .= '|S577|+'.$this->pubdate->format( "Y-m-d" ).'T00:00:00Z/11';
 			}
 			//P813 = retrieved
-			$qs .= '|S813|+'.date('Y-m-d', strtotime("today")).'T00:00:00Z/11'; 
+			$qs .= '|S813|+'.$this->today->format( "Y-m-d" ).'T00:00:00Z/11'; 
 			$qs .= '|S854|"'.$this->url.'"';
 
 			return $qs;

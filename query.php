@@ -18,7 +18,7 @@ if(isset($_GET['url'])){
 	$ref = new citoidRef($url);	
 	$date = '';
 	if ($ref->getPubDate() != null){
-		$date = date("Y-m-d", $ref->getPubDate());
+		$date = $ref->getPubDate()->format("Y-m-d");
 	}
 	echo json_encode(array(
 		"url" 		=> $ref->getURL(),

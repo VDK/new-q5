@@ -29,7 +29,7 @@ class Person
 	}
 	public function setDOD($value, $accuracy = 11){
 		if (trim($value) != ''){
-			$this->doD = strtotime($value);
+			$this->doD = DateTime::createFromFormat("Y-m-d",date('Y-m-d',  strtotime($value)));
 			$this->doDAccuracy = $accuracy;
 		}
 	}
@@ -38,7 +38,7 @@ class Person
 	}
 	public function getDOD($format=''){
 		if ( $this->doD != null && $format == 'qs' ){
-		   return "P570|+".date("Y-m-d", $this->doD).'T00:00:00Z/'.$this->doDAccuracy.self::getAge('qs');
+		   return "P570|+".$this->doD->format("Y-m-d").'T00:00:00Z/'.$this->doDAccuracy.self::getAge('qs');
 		}
 		else{
 		   return $this->doD;
@@ -75,7 +75,7 @@ class Person
 	}
 	public function setDOB($value, $accuracy = 11){
 		if (trim($value) != ''){
-			$this->doB = strtotime($value);
+			$this->doB = DateTime::createFromFormat("Y-m-d",date('Y-m-d',  strtotime($value)));
 			$this->doBAccuracy = $accuracy;
 		}
 	}
@@ -85,21 +85,24 @@ class Person
 	}
 	public function getDOB($format = ''){
 		if ($this->doB == null && $this->age != null && $this->doD != null){
-			$this->doB = strtotime("-".$this->age." years", $this->doD); 
+			$this->doB = clone $this->doD;
+			$this->doB->modify("-".$this->age." years"); 
 		}
 		if ($this->doB != null && $format == 'qs'){
 			if ($this->doBAccuracy == "APROX"){
-				$year = date('Y', $this->doB); 
-				if ((int)date("n", $this->doB) < 7){
+				$year = $this->doB->format("Y"); 
+				//shift aproximate dob to a year earlier in the first six months of the year
+				if ((int)$this->doB->format("n") < 7){
 					$year--; 
 				}
-
+				$earliest = clone $this->doB;
+				$earliest->modify("-1 years");
 				return "P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
-				.'|P1319|+'.date("Y-m-d", strtotime("-1 years +1 days", $this->doB))."T00:00:00Z/".$this->doDAccuracy.
-			     '|P1326|+'.date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doDAccuracy;
+				.'|P1319|+'.$earliest->format("Y-m")."-00T00:00:00Z/".$this->doDAccuracy.
+			     '|P1326|+'.$this->doB->format('Y-m').'-00T00:00:00Z/'.$this->doDAccuracy;
 			}
 			else{
-				return "P569|+".date('Y-m-d', $this->doB).'T00:00:00Z/'.$this->doBAccuracy;
+				return "P569|+".$this->doB->format('Y-m-d').'T00:00:00Z/'.$this->doBAccuracy;
 			}
 		}
 		else{

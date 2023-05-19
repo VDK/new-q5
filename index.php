@@ -17,7 +17,7 @@ if (isset($_POST['fullname'])){
   $today    = new DateTime();
   if ($reference1->getPubDate() != null){
     //shift "today" to pubDate
-    $today = new DateTime(date('Y-m-d', $reference1->getPubDate()));
+    $today = clone $reference1->getPubDate();
   }
 
   //handle person
@@ -82,6 +82,14 @@ if (isset($_POST['fullname'])){
         $person1->setDOB($dob, 10);
      }
   }
+
+  //if age + referenced source
+  if ($person1->getDOD() == null and $person1->getAge() != null and $reference1->getPubDate() != null){
+    $pubdate = clone $reference1->getPubDate();
+    $person1->setDOB($pubdate->modify( "-".$person1->getAge()." years")->format("Y-m-d"), "APROX");
+  }
+
+
   //end DOB
 
   $customQS = "";
