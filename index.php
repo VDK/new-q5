@@ -4,6 +4,21 @@ include_once 'reference.php';
 $error = '';
 $qs = false;
 
+function desribed_by_source(){
+  if (isset($_COOKIE['described_by_source']) and count($_POST) == 0){
+    return $_COOKIE['described_by_source'];
+  }
+  elseif (isset($_POST['described_by_source'])){
+      return "checked";
+  }
+  return "unchecked";
+}
+
+
+$described_by_source  = desribed_by_source();
+setcookie("described_by_source", $described_by_source , time() +  (86400 * 30 * 100));
+
+
 if (isset($_POST['fullname'])){
  
 
@@ -110,11 +125,13 @@ LAST|P31|Q5
   }
   $qs .= 
    appendProp($person1->getQID(), $person1->getName('qs'))
-  
   .appendProp($person1->getQID(), $person1->getDOB('qs'), $reference1->getQS())
   .appendProp($person1->getQID(), $person1->getDOD('qs'), $reference1->getQS())
-  .appendProp($person1->getQID(), $customQS, $reference1->getQS())
-  .appendProp($person1->getQID(), $reference1->getDescribedAtUrlQS());
+  .appendProp($person1->getQID(), $customQS, $reference1->getQS());
+
+  if($described_by_source == "checked"){
+    $qs .= appendProp($person1->getQID(), $reference1->getDescribedAtUrlQS());
+  }
   
   
 }
@@ -222,6 +239,8 @@ function appendProp($qid = null, $prop = null, $ref = null){
             <input type="date" id="ref_pubdate"  name="ref_pubdate" />
             <label for="ref_authors">author</label>
             <input type="text" id="ref_authors"  name="ref_authors" />
+            <input id="described" type="checkbox" name="described_by_source" id="described_by_source" <?php echo $described_by_source; ?> />
+            <label id="described_label" for="described_by_source">Include reference as "described by source" statement</label>
           </div>
           <span style="clear:both;"/>
         <input type="submit" class='button' value="go" id="submit" />

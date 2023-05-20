@@ -63,6 +63,18 @@ a.cirussearch{
 	/*padding: 10px;*/
 	width: 100%;
 }
+#described {
+	clear:both;
+	width:40px!important;
+	height:40px;
+	float:left;
+	margin-right:4px;
+
+}
+#described_label{
+	margin-top:6px;
+	padding-bottom: 10px;
+}
 .form-wrapper textarea.expand{
 	height: 200px;
 

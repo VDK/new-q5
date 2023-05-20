@@ -15,6 +15,7 @@ class citoidRef extends reference
 			if ($test != 'HTTP/1.1 404 Not Found'){
 				self::setURL($url);
 				$response = file_get_contents(self::CITOID.urlencode($url));
+
 				$response = json_decode($response,true);
 				if (count($response) == 1){
 					$response = $response[0];
@@ -26,11 +27,12 @@ class citoidRef extends reference
 					if (isset($response['title'])){
 						self::setTitle($response['title']);
 					}
-
-					foreach ($response['creators'] as $value) {
-						$author = trim(strip_tags($value['firstName']." ".$value['lastName']));
-						if (!strtotime($author)){
-							$authors[] = $author;
+					if (isset($response["creators"])){
+						foreach ($response['creators'] as $value) {
+							$author = trim(strip_tags($value['firstName']." ".$value['lastName']));
+							if (!strtotime($author)){
+								$authors[] = $author;
+							}
 						}
 					}
 					self::setAuthors($authors);

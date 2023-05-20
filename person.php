@@ -64,7 +64,7 @@ class Person
 	}
 	public function getAge($format=''){
 		if ($this->age == null && $this->doD != null && $this->doB != null && $this->doDAccuracy == 11 && $this->doBAccuracy == 11){
-			$this->age =  floor( ( $this->doD - $this->doB ) / 31556926);
+			$this->age =  $this->doB->diff( $this->doD)->format('%y');
 		}
 		if ($this->age != null && $format == 'qs'){
 			return  "|P3629|".$this->age.'U24564698'; //years old
