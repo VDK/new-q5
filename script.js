@@ -1,4 +1,4 @@
-
+var image_root = "http://commons.wikimedia.org/wiki/Special:FilePath/";
 $(function(){
     //CITOID MAGIC
   	$('#ref_url').on('change', function(){
@@ -49,12 +49,22 @@ $(function(){
             option.className = "block-2 option";
             option.innerHTML = "";
             if (item['image']){
-              option.innerHTML += "<img class='response_image' src ='"+item['image']+"' alt='"+item['itemLabel']+"'>" + option.innerHTML;
+              option.setAttribute('style', "background:url('"+image_root+item['image']+"?width=100') no-repeat left top;");
+              option.setAttribute('image', true);
             }
             option.innerHTML += "<a href='https://wikidata.org/wiki/"+item['qitem']+"' target='_blank'>"+item['itemLabel']+"</a>";
-            if(item['dateOfBirth']){
-              var d = new Date(item['dateOfBirth']);
-              option.innerHTML += " ("+ d.getFullYear() +")";
+            if(item['dateOfBirth'] || item['dateOfDeath']){
+              option.innerHTML += " (";
+              if (item['dateOfBirth']){
+                var d = new Date(item['dateOfBirth']);
+                option.innerHTML += d.getFullYear();
+
+              }
+              if(item['dateOfDeath']){
+                var d = new Date(item['dateOfDeath']);
+                option.innerHTML += "-"+ d.getFullYear();
+              }
+              option.innerHTML += ")"
             }
             if(item['occupation']){
               option.innerHTML += ", "+ item['occupation'] ;
