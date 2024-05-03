@@ -81,7 +81,7 @@ class Person
 	}
 
 	public function getDOBAccuracy(){
-		return $this->doDAccuracy;
+		return $this->doBAccuracy;
 	}
 	public function getDOB($format = ''){
 		if ($this->doB == null && $this->age != null && $this->doD != null){

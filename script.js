@@ -1,107 +1,93 @@
-var image_root = "http://commons.wikimedia.org/wiki/Special:FilePath/";
-$(function(){
-    //CITOID MAGIC
-  	$('#ref_url').on('change', function(){
-  		var url = encodeURI($('#ref_url').val());
-      $('#ref_params').addClass('spindle');
-		  $('#ref_title').attr('readonly', true);
-		  $('#ref_lang').attr('readonly', true);
-		  $('#ref_authors').attr('readonly', true);
-		  $('#ref_pubdate').attr('readonly', true);
-  		$.getJSON( 'query.php', {
-    			url: url
-  			}).done(function( data ) {
-          $('#ref_params').removeClass('spindle');
-          $('#ref_title').attr('readonly', false);
-          $('#ref_lang').attr('readonly', false);
-          $('#ref_authors').attr('readonly', false);
-          $('#ref_pubdate').attr('readonly', false);
+const image_root = "http://commons.wikimedia.org/wiki/Special:FilePath/";
 
-          $('#ref_url').val(data['url']);
-          $('#ref_title').val(data['title']);
-          $('#ref_lang').val(data['language']);
-          $('#ref_authors').val(data['authors']);
-          $('#ref_pubdate').val(data['pubdate']);
-  		}).fail(function(){
-        $('#ref_params').removeClass('spindle');
-          $('#ref_title').attr('readonly', false);
-          $('#ref_lang').attr('readonly', false);
-          $('#ref_authors').attr('readonly', false);
-          $('#ref_pubdate').attr('readonly', false);
-      });
-  	});
-    //match with existing Wikidata item
-    $('#fullname').on('change', function(){
-      $.getJSON( 'query.php', {
-        srsearch: $(this).val()
-      }).done(function( data ) {
-        if (data != "nee"){
-          $("#possible_match").show();
-          $('#responses').empty();
-          var new_item = document.createElement('li');
-          new_item.className = "block-2 selected";
-          new_item.innerHTML = "New item";
-          new_item.onclick = selectOption;
-          $('#responses').append(new_item);
-          for (var i = 0; i <= data.length - 1; i++) {
-            var item = data[i];
-            var option = document.createElement('li');
-            option.className = "block-2 option";
-            option.innerHTML = "";
-            if (item['image']){
-              option.setAttribute('style', "background:url('"+image_root+item['image']+"?width=100') no-repeat left top;");
-              option.setAttribute('image', true);
-            }
-            option.innerHTML += "<a href='https://wikidata.org/wiki/"+item['qitem']+"' target='_blank'>"+item['itemLabel']+"</a>";
-            if(item['dateOfBirth'] || item['dateOfDeath']){
-              option.innerHTML += " (";
-              if (item['dateOfBirth']){
-                var d = new Date(item['dateOfBirth']);
-                option.innerHTML += d.getFullYear();
+$(document).ready(function(){
+  // CITOID MAGIC
+  $('#ref_url').on('change', function(){
+    const url = encodeURI($('#ref_url').val());
+    $('#ref_params').addClass('spindle');
+    $('#ref_title, #ref_lang, #ref_authors, #ref_pubdate').attr('readonly', true);
 
-              }
-              if(item['dateOfDeath']){
-                var d = new Date(item['dateOfDeath']);
-                option.innerHTML += "-"+ d.getFullYear();
-              }
-              option.innerHTML += ")"
-            }
-            if(item['occupation']){
-              option.innerHTML += ", "+ item['occupation'] ;
-            }
-            if(item['country']){
-              option.innerHTML += " from "+ item['country'] ;
-            }
-            option.setAttribute('qid', item['qitem']);
-            option.onclick = selectOption;
-            $('#responses').append(option);
+    $.getJSON('query.php', {
+      url: url
+    }).done(function(data){
+      $('#ref_params').removeClass('spindle');
+      $('#ref_title, #ref_lang, #ref_authors, #ref_pubdate').attr('readonly', false);
+
+      $('#ref_url').val(data['url']);
+      $('#ref_title').val(data['title']);
+      $('#ref_lang').val(data['language']);
+      $('#ref_authors').val(data['authors']);
+      $('#ref_pubdate').val(data['pubdate']);
+    }).fail(function(){
+      $('#ref_params').removeClass('spindle');
+      $('#ref_title, #ref_lang, #ref_authors, #ref_pubdate').attr('readonly', false);
+    });
+  });
+
+  // Match with existing Wikidata item
+  $('#fullname').on('change', function(){
+    $.getJSON('query.php', {
+      srsearch: $(this).val()
+    }).done(function(data){
+      if(data !== "nee"){
+        $("#possible_match").show();
+        $('#responses').empty();
+        const new_item = $('<li>', { class: "block-2 selected", text: "New item" }).click(selectOption);
+        $('#responses').append(new_item);
+
+        data.forEach(function(item){
+          const option = $('<li>', { class: "block-2 option" });
+          if(item['image']){
+            option.css('background', "url('"+image_root+item['image']+"?width=100') no-repeat left top");
+            option.attr('image', true);
           }
-        }
-      });
+          option.append("<a href='https://wikidata.org/wiki/"+item['qitem']+"' target='_blank'>"+item['itemLabel']+"</a>");
+          if(item['dateOfBirth'] || item['dateOfDeath']){
+            option.append(" (");
+            if(item['dateOfBirth']){
+              const dob = new Date(item['dateOfBirth']);
+              option.append(dob.getFullYear());
+            }
+            if(item['dateOfDeath']){
+              const dod = new Date(item['dateOfDeath']);
+              option.append("-"+ dod.getFullYear());
+            }
+            option.append(")");
+          }
+          if(item['occupation']){
+            option.append(", "+ item['occupation']);
+          }
+          if(item['country']){
+            option.append(" from "+ item['country']);
+          }
+          option.attr('qid', item['qitem']).click(selectOption);
+          $('#responses').append(option);
+        });
+      }
     });
-    $('#age').on('keyup', function(){
-      this.value = this.value.replace(/[^0-9]/gi, '');
-    });
-    $('#qs').on('keyup', function(){
+  });
+
+  $('#age, #qs').on('keyup', function(){
+    this.value = this.value.replace(/[^0-9]/gi, '');
+    if($(this).attr('id') === 'qs'){
       this.value = this.value.replace(/https:\/\/www\.wikidata\.org\/wiki\/(Property:)?/, '');
-    });
+    }
+  });
 });
-//select match with existing Wikidata item
+
+// Select match with existing Wikidata item
 function selectOption(){
   $('#person_QID').val($(this).attr('qid'));
-  var a = $('#responses').find('.selected')[0];
-  $(a).removeClass('selected');
-  $(a).addClass('option');
-  $(this).addClass('selected');
-  $(this).removeClass('option');
+  const selected_option = $('#responses').find('.selected')[0];
+  $(selected_option).removeClass('selected').addClass('option');
+  $(this).addClass('selected').removeClass('option');
 }
 
-
 function sendQS(){
-  var qs  = $('#quickstatement').val().trim();
+  let qs  = $('#quickstatement').val().trim();
   qs = qs.split(/\n/).join('||');
   qs = encodeURIComponent(qs);
-  var url = "https://quickstatements.toolforge.org/#v1="+qs;
-  var win = window.open(url, '_blank');
+  const url = "https://quickstatements.toolforge.org/#v1="+qs;
+  const win = window.open(url, '_blank');
   win.focus();
 }

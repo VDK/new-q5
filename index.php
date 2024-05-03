@@ -46,38 +46,45 @@ if (isset($_POST['fullname'])){
   $dod = " ".trim(strip_tags($_POST['dod']));
   if ($dod != " "){
     // makes in possible to input "last friday -1 weeks"
-    
-    if (!strripos("last ", $dod)){ 
-      for ( $days = 7;  $days--;) {
-        $dayOfWeek = $loopDate->modify( '+1 days' )->format( 'l' );
-        if (strripos($dod, $dayOfWeek) != false){
-          if ($dayOfWeek == $today->format('l')){
-            $person1->setDOD($today->format("Y-m-d"));
-          }
-          else{
-            $person1->setDOD ('last '.$dayOfWeek." ".$today->format("Y-m-d"));
-          }
-        }
-      }
-    }
-    if(preg_match('/\d/', $dod) && strtotime($dod) != false){
-      $person1->setDOD($dod);
-    }
-    else{
-      //"if MONTH string detected take 'last MONTH' as dod"
-      for ($months=0; $months < 11; $months++) { 
-         $month = $loopDate->modify( '-1 months' )->format( 'F' );
-         if (strripos($dod, $month) != false){
-            $date = new DateTime($month." ".$today->format("Y"));
-            if ($date > $today){
-              $date->modify('-1 years');
+    if (!strripos("last ", $dod)) { 
+        for ($days = 7; $days--;) {
+            $dayOfWeek = $loopDate->modify('+1 days')->format('l');
+            if (strripos($dod, $dayOfWeek) !== false) {
+                if ($dayOfWeek == $today->format('l')) {
+                    $person1->setDOD($today->format("Y-m-d"));
+                } else {
+                    $person1->setDOD('last ' . $dayOfWeek . " " . $today->format("Y-m-d"));
+                }
             }
-            $person1->setDOD($date->format("Y-m-d"), 10);
-         }
-      }
-    }
-    if (preg_match('/^ [21]\d{3}$/', $dod)){
-      $person1->setDOD($dod."-01-01", 9);
+        }
+
+        // Month handling
+        for ($months = 0; $months < 11; $months++) { 
+            $month = $loopDate->modify('-1 months')->format('F');
+            if (strripos($dod, $month) !== false) {
+                $date = new DateTime($month . " " . $today->format("Y"));
+                if ($date > $today) {
+                    $date->modify('-1 years');
+                }
+                $person1->setDOD($date->format("Y-m-d"), 10);
+            }
+        }
+
+    } else {
+        // Year handling
+        if (preg_match('/^[21]\d{3}$/', $dod)) {
+            $person1->setDOD($dod . "-01-01", 9);
+        } elseif (preg_match('/\d/', $dod) && strtotime($dod) !== false) {
+            $person1->setDOD($dod);
+        }
+
+        // Month and year without day handling
+        for ($months = 0; $months < 11; $months++) { 
+            $month = $loopDate->modify('-1 months')->format('F');
+            if (preg_match('/^' . $month . '\s*[12]\d{3}$/i', $dod) || preg_match('/^[12]\d{3}\s*' . $month . '$/i', $dod)) {
+                $person1->setDOD($dod, 10);
+            }
+        }
     }
   }
   //end DOD
