@@ -90,7 +90,7 @@ include_once 'controller.php';
             <label for="ref_authors">author</label>
             <input type="text" id="ref_authors"  name="ref_authors" />
             <input id="described" type="checkbox" name="described_by_source" id="described_by_source" <?php echo $described_by_source; ?> />
-            <label id="described_label" for="described_by_source">Include reference as "described by source" statement</label>
+            <label id="described_label" for="described_by_source">Include reference as "described by url (P973)" statement</label>
           </div>
           <span style="clear:both;"/>
         <input type="submit" class='button' value="go" id="submit" />
