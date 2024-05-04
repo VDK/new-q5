@@ -97,9 +97,10 @@ class Person
 				}
 				$earliest = clone $this->doB;
 				$earliest->modify("-1 years");
+				$accuracy = ($this->doDAccuracy == 11) ? 10 : $this->doDAccuracy;
 				return "P569|+".$year.'-00-00T00:00:00Z/9|P1480|Q5727902'
-				.'|P1319|+'.$earliest->format("Y-m")."-00T00:00:00Z/".$this->doDAccuracy.
-			     '|P1326|+'.$this->doB->format('Y-m').'-00T00:00:00Z/'.$this->doDAccuracy;
+				.'|P1319|+'.$earliest->format("Y-m")."-00T00:00:00Z/".$accuracy.
+			     '|P1326|+'.$this->doB->format('Y-m').'-00T00:00:00Z/'.$accuracy;
 			}
 			else{
 				return "P569|+".$this->doB->format('Y-m-d').'T00:00:00Z/'.$this->doBAccuracy;
