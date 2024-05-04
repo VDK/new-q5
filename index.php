@@ -43,10 +43,10 @@ if (isset($_POST['fullname'])){
   $person1->setDescription($_POST['description']);
   
   //set Date of Death
-  $dod = " ".trim(strip_tags($_POST['dod']));
+  $dod = trim(strip_tags($_POST['dod']));
   if ($dod != " "){
     // makes in possible to input "last friday -1 weeks"
-    if (!strripos("last ", $dod)) { 
+    if (strripos("last ", $dod)) { 
         for ($days = 7; $days--;) {
             $dayOfWeek = $loopDate->modify('+1 days')->format('l');
             if (strripos($dod, $dayOfWeek) !== false) {
@@ -71,20 +71,21 @@ if (isset($_POST['fullname'])){
         }
 
     } else {
+
         // Year handling
         if (preg_match('/^[21]\d{3}$/', $dod)) {
             $person1->setDOD($dod . "-01-01", 9);
         } elseif (preg_match('/\d/', $dod) && strtotime($dod) !== false) {
+
             $person1->setDOD($dod);
         }
-
-        // Month and year without day handling
+          // Month and year without day handling
         for ($months = 0; $months < 11; $months++) { 
-            $month = $loopDate->modify('-1 months')->format('F');
-            if (preg_match('/^' . $month . '\s*[12]\d{3}$/i', $dod) || preg_match('/^[12]\d{3}\s*' . $month . '$/i', $dod)) {
-                $person1->setDOD($dod, 10);
-            }
-        }
+          $month = $loopDate->modify('-1 months')->format('F');
+          if (preg_match('/^' . $month . '\s*[12]\d{3}$/i', $dod) ||  preg_match('/^[12]\d{3}\s*' . $month . '$/i', $dod) ){
+            $person1->setDOD($dod, 10);
+          }
+        } 
     }
   }
   //end DOD
@@ -99,8 +100,7 @@ if (isset($_POST['fullname'])){
   //reduce accuracy if only month + year:
   for ($months=0; $months < 11; $months++) { 
      $month = $loopDate->modify( '-1 months' )->format( 'F' );
-     if (preg_match('/^'.$month.'\s*[12]\d{3}$/i' , $dob) 
-      || preg_match('/^[12]\d{3}\s*'.$month.'$/i' , $dob)  ){
+     if (preg_match('/^'.$month.'\s*[12]\d{3}$/i' , $dob) || preg_match('/^[12]\d{3}\s*'.$month.'$/i' , $dob)  ){
         $person1->setDOB($dob, 10);
      }
   }
