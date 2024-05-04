@@ -18,6 +18,7 @@ new Q5 is a form that quickly set up a Wikidata item for an individual by genera
 The user can edit the generated QuickStatement before importing it to Wikidata throught the QuickStatement app by selecting "Import QuickStatment".
 
 ## Disclaimer:
+
 * New Q5 has not been tested with names not written in the Latin alphabet.
 * New Q5 assumes a person's gender based on their first given name.
 * It is assumed this form is used to create or update one item at the time and that the user will review if the changes made correspond with their expectations. 
