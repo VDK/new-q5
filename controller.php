@@ -49,7 +49,7 @@ function handle_form_submission() {
   $dod = trim(strip_tags($_POST['dod']));
   if ($dod != " "){
     // makes in possible to input "last friday -1 weeks"
-    if (strripos("last ", $dod)) { 
+    if (!strripos("last ", $dod)) { 
         for ($days = 7; $days--;) {
             $dayOfWeek = $loopDate->modify('+1 days')->format('l');
             if (strripos($dod, $dayOfWeek) !== false) {
