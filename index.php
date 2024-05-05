@@ -89,8 +89,10 @@ include_once 'controller.php';
             <input type="date" id="ref_pubdate"  name="ref_pubdate" />
             <label for="ref_authors">author</label>
             <input type="text" id="ref_authors"  name="ref_authors" />
-            <input id="described_by_source" type="checkbox" name="described_by_source" <?php echo $described_by_source; ?> />
-            <label id="described_label" for="described_by_source">Include reference as "<a href="https://www.wikidata.org/wiki/Property:P973" target="_blank">described by url (P973)</a>" statement</label>
+
+
+           <div id="description"> <input id="described_by_source" type="checkbox" name="described_by_source" <?php echo $described_by_source; ?> />
+            <label id="described_label" for="described_by_source">Include reference as <a href="https://www.wikidata.org/wiki/Property:P973" target="_blank">described by url (P973)</a> statement</label></div>
 
           </div>
           <span style="clear:both;"/>

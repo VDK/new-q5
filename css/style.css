@@ -64,19 +64,25 @@ a.cirussearch{
 	width: 100%;
 }
 #described_by_source {
-	clear:both;
-	width:40px!important;
-	height:40px;
-	float:left;
-	margin-right:4px;
-
+  clear: both;
+  width: 40px !important;
+  height: 40px;
+  float: left;
+  margin-right: 4px;
 }
-#described_label{
-	height:60px;
-	display: flex;
-	padding-left: 2px;
-  align-items: center;
+
+#described_label {
+  height: 30px;
+  padding-left: 2px;
   cursor: pointer;
+  margin: 0px;
+  vertical-align: middle; /* Adjust this value as needed */
+  line-height: 1.2; /* Adjust this value as needed */
+}
+
+#description {
+  display: flex;
+  align-items: center;
 }
 .form-wrapper textarea.expand{
 	height: 200px;
