@@ -20,6 +20,15 @@ $described_by_source  = desribed_by_source();
 setcookie("described_by_source", $described_by_source , time() +  (86400 * 30 * 100));
 
 
+function get_notice_closed() {
+    if (isset($_COOKIE['notice_closed'])) {
+       return $_COOKIE['notice_closed'] === "true";
+    }
+    return false; // Default value if cookie is not set
+}
+
+$notice_closed = get_notice_closed();
+setcookie("notice_closed", $notice_closed, time() + (86400 * 30 * 100)); 
 
 // Function to handle form submission
 function handle_form_submission() {

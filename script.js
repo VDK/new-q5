@@ -107,3 +107,31 @@ function sendQS(){
   const win = window.open(url, '_blank');
   win.focus();
 }
+
+$(document).ready(function() {
+  $("#close").click(function() {
+    $("#notice").fadeOut();
+    $("#reopen").fadeIn();
+    sendActionToController('close'); // Send action 'close' to controller
+  });
+
+  $("#reopen").click(function() {
+    $("#notice").fadeIn();
+    $("#reopen").fadeOut();
+    sendActionToController('reopen'); // Send action 'reopen' to controller
+  });
+
+  function sendActionToController(action) {
+    $.ajax({
+      type: "GET",
+      url: "notice_controller.php", // Replace with the actual URL of your PHP controller file
+      data: { action: action },
+      success: function(response) {
+        console.log("Action sent to controller: " + action);
+      },
+      error: function(xhr, status, error) {
+        console.error("Error sending action to controller: " + error);
+      }
+    });
+  }
+});

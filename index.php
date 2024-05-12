@@ -51,8 +51,16 @@ include_once 'controller.php';
             This site requires JavaScript.
           </div>
         </noscript>
-      
-        Personal details:
+<div id="notice" <?php if ($notice_closed) echo 'style="display: none;"'; ?>>
+  <a href="#" id="close" alt="close">x</a>
+  <p>This is a small form for adding or updating a person's data in <a href="https://www.wikidata.org/wiki/Wikidata:Main_Page" target="_blank">Wikidata</a>.</p>
+  <p>For a full list of features and disclaimers, please consult the <a href="https://github.com/VDK/new-q5/blob/main/README.md">README</a>.</p>
+  <p>Please make sure new items conform to the <a href="https://www.wikidata.org/wiki/Wikidata:Notability" target="_blank">notability standards</a>, especially those for <a href="https://www.wikidata.org/wiki/Wikidata:Living_people" target="_blank">living people</a>.</p>
+</div>
+<a href="#" id="reopen" alt="reopen" <?php if (!$notice_closed) echo 'style="display: none;"'; ?>>?</a>
+
+
+        <p>Personal details:</p>
         <div>
         <div class="flex">
         <div style="width: 100%"><label for="fullname">name</label>
