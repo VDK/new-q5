@@ -117,6 +117,17 @@ function handle_form_submission() {
 
   //end DOB
 
+  //construct QuickStatement 
+   if (!$person1->getQID()){
+    $qs .= 
+"CREATE
+LAST|Len|\"".$person1->getName()."\"
+LAST|Lde|\"".$person1->getName()."\"
+LAST|Lfr|\"".$person1->getName()."\"
+LAST|Lnl|\"".$person1->getName()."\"
+LAST|Den|\"".$person1->getDescription()."\"
+LAST|P31|Q5";
+  }
  
   
 	 // Append properties to QuickStatements
