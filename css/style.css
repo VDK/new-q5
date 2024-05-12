@@ -35,21 +35,12 @@ a.cirussearch{
 	margin:0px;
 }
 
-#close {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  cursor: pointer;
-  font-size: 18px;
-  color: #888; /* cross color */
-}
 #close, #reopen {
-  position: absolute;
-  top: 10px;
-  right: 20px;
+  float: right; /* Float the buttons to the right */
+  margin-right: 10px; /* Add margin to separate buttons */
   cursor: pointer;
   font-size: 18px;
-  color: #888; /* cross color */
+  color: #888; /* Cross color */
   text-decoration: none;
 }
  
