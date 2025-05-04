@@ -22,5 +22,5 @@ The user can edit the generated QuickStatement before importing it to Wikidata t
 * New Q5 has not been tested with names not written in the Latin alphabet.
 * New Q5 assumes a person's gender based on their first given name.
 * It is assumed this form is used to create or update one item at the time and that the user will review if the changes made correspond with their expectations. 
-* The script most commonly fails when it tries to break up a person's name into its constituent parts. It even fails on my own Dutch family name ("de Kok")! 
+* The breaking up of a name into its constituent part can be improved uppon. Spanish second family names are not yet supported for instance. 
 

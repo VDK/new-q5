@@ -130,6 +130,7 @@ function handle_form_submission() {
    if (!$person1->getQID()){
     $qs .= 
 "CREATE
+LAST|Lmul|\"".$person1->getName()."\"
 LAST|Len|\"".$person1->getName()."\"
 LAST|Lde|\"".$person1->getName()."\"
 LAST|Lfr|\"".$person1->getName()."\"
@@ -140,6 +141,7 @@ LAST|P31|Q5";
  
   
 	 // Append properties to QuickStatements
+  $qs .= appendProp($person1->getQID(), $person1->getGender('qs'));
 	$qs .= appendProp($person1->getQID(), $person1->getName('qs'));
 	$qs .= appendProp($person1->getQID(), $person1->getDOB('qs'), $reference1->getQS());
 	$qs .= appendProp($person1->getQID(), $person1->getDOD('qs'), $reference1->getQS());

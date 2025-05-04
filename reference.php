@@ -1,5 +1,5 @@
 <?php
-include_once 'sparqlQuery.php';
+include_once 'functions.php';
 
 /**
  * 
