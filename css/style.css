@@ -180,8 +180,8 @@ ul#responses{
 	margin: 0;
  }
 ul#responses > li{
-	min-height: 95px;
-	padding-left:110px;
+	min-height: 115px;
+	padding-left:130px;
 	padding-top:5px;	
     padding-right:5px;
     margin: 0px;
