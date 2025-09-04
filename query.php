@@ -2,15 +2,27 @@
 include_once 'citoid_ref.php';
 
 
-define('WD_API', 'https://www.wikidata.org/w/api.php?');
 
-$context = stream_context_create(
-    array(
-        "http" => array(
-            "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
-        )
-    )
-);
+function wd_api_query(array $params) {
+    $url = 'https://www.wikidata.org/w/api.php?' . http_build_query($params);
+
+    static $context = null;
+    if ($context === null) {
+        $opts = [
+            "http" => [
+                "header" => "User-Agent: New-Q5/2.0 (https://veradekok.nl/contact)\r\n"
+            ]
+        ];
+        $context = stream_context_create($opts);
+    }
+
+    $response = file_get_contents($url, false, $context);
+    if ($response === false) {
+        throw new Exception("Wikidata API request failed: $url");
+    }
+
+    return json_decode($response, true);
+}
 
 
 
@@ -34,29 +46,31 @@ if(isset($_GET['url'])){
 }
 
 
-function getLabel($qid, $label_cache, $lang="en"){
-	if (isset($label_cache[$lang][$qid])){
-		return $label_cache[$lang][$qid];
-	}
-	$wbgetentities = array(
+function getLabel($qid, &$label_cache, $lang = "en") {
+    // Return from cache if we already looked this up
+    if (isset($label_cache[$lang][$qid])) {
+        return $label_cache[$lang][$qid];
+    }
 
-		'format'=>'json',
-		'action'=>'wbgetentities',
-		'props'=>'labels',
-		'ids' => $qid
-	);
+    // Query Wikidata API
+    $query = wd_api_query([
+        'format' => 'json',
+        'action' => 'wbgetentities',
+        'props'  => 'labels',
+        'ids'    => $qid
+    ]);
 
-	$query = json_decode(file_get_contents(WD_API.http_build_query($wbgetentities)), true);
-	if (isset($query['entities'][$qid]['labels'][$lang])){
-		$label = $query['entities'][$qid]['labels'][$lang]['value'];
-	}
-	else{
-		$label = $qid;
-	}
-	$label_cache[$lang][$qid] = $label;
-	return $label;
+    if (isset($query['entities'][$qid]['labels'][$lang])) {
+        $label = $query['entities'][$qid]['labels'][$lang]['value'];
+    } else {
+        $label = $qid; // fallback to QID if no label
+    }
 
+    // Store in cache and return
+    $label_cache[$lang][$qid] = $label;
+    return $label;
 }
+
 
 function country_substitute($countries){
 	$new_countries = array();
@@ -102,9 +116,22 @@ $wbgetclaims = array('action'=> 'wbgetclaims','format'=>'json');
 
 $label_cache = array("en" => array());
 
-if(isset($_GET['srsearch'])){
-	$search_vars['srsearch'] = "haswbstatement:P31=Q5 '".trim($_GET['srsearch'])."'";
-	$query = json_decode(file_get_contents(WD_API.http_build_query($search_vars)), true)['query'];
+if (isset($_GET['srsearch'])) {
+    $search_vars = [
+        'action'  => 'query',
+        'list'    => 'search',
+        'utf8'    => 'true',
+        'format'  => 'json',
+        'srlimit' => '20',
+        // keep your current quoting; remove the quotes if you prefer plain text search
+        'srsearch'=> "haswbstatement:P31=Q5 '" . trim($_GET['srsearch']) . "'",
+    ];
+
+    $resp  = wd_api_query($search_vars);
+    $query = $resp['query'] ?? null;
+    if (!$query) {
+        die("Request failed");
+    }
 
 	if ($query['searchinfo']['totalhits'] >= 1){
 		$results = array();
@@ -113,23 +140,32 @@ if(isset($_GET['srsearch'])){
 			'qitem'=> $search_result['title'],
 			'itemLabel' => getLabel($search_result['title'], $label_cache));
 
-			$wbgetclaims['entity'] = $search_result['title'];
-			$claims = json_decode(file_get_contents(WD_API.http_build_query($wbgetclaims)), true)['claims'];
+			$claimsResp = wd_api_query([
+			    'action' => 'wbgetclaims',
+			    'format' => 'json',
+			    'entity' => $search_result['title']
+			]);
+			$claims = $claimsResp['claims'] ?? [];
+
 			
-			$occupations = array();
-			foreach ($claims['P106'] as $occupation) {
-				array_push($occupations, getLabel($occupation['mainsnak']["datavalue"]["value"]['id'], $label_cache));
+			$occupations = [];
+			if (!empty($claims['P106'])) {
+			    foreach ($claims['P106'] as $occ) {
+			        $occupations[] = getLabel($occ['mainsnak']['datavalue']['value']['id'], $label_cache);
+			    }
 			}
 			$occupations = array_unique($occupations);
 			$result['occupation'] = implode("/&shy;", $occupations);
 
-			$countries = array();
-			foreach ($claims['P27'] as $country) {
-				array_push($countries, getLabel($country['mainsnak']["datavalue"]["value"]['id'], $label_cache));
+			$countries = [];
+			if (!empty($claims['P27'])) {
+			    foreach ($claims['P27'] as $c) {
+			        $countries[] = getLabel($c['mainsnak']['datavalue']['value']['id'], $label_cache);
+			    }
 			}
-			$countries = array_unique($countries);
-			$countries = country_substitute($countries);
+			$countries = country_substitute(array_unique($countries));
 			$result['country'] = implode("/&shy;", $countries);
+
 			if (isset($claims['P569'])){
 				$result['dateOfBirth'] = get_date_string($claims['P569'][0]["mainsnak"]["datavalue"]["value"]);
 			}
