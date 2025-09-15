@@ -47,9 +47,13 @@ if(isset($_GET['url'])){
 
 
 function getLabel($qid, &$label_cache, $lang = "en") {
-    // Return from cache if we already looked this up
+    // Check cache
     if (isset($label_cache[$lang][$qid])) {
         return $label_cache[$lang][$qid];
+    }
+    //prepare a cache for "mul"
+    if (!isset($label_cache['mul'])) {
+        $label_cache['mul'] = [];
     }
 
     // Query Wikidata API
@@ -60,14 +64,20 @@ function getLabel($qid, &$label_cache, $lang = "en") {
         'ids'    => $qid
     ]);
 
-    if (isset($query['entities'][$qid]['labels'][$lang])) {
-        $label = $query['entities'][$qid]['labels'][$lang]['value'];
+    $entities = $query['entities'][$qid]['labels'] ?? [];
+
+    if (isset($entities[$lang]['value'])) {
+        $label = $entities[$lang]['value'];
+    } elseif (isset($entities['mul']['value'])) {
+        $label = $entities['mul']['value'];
     } else {
-        $label = $qid; // fallback to QID if no label
+        $label = $qid; // fallback to QID
     }
 
-    // Store in cache and return
+    // Store in cache in both languages
     $label_cache[$lang][$qid] = $label;
+    $label_cache['mul'][$qid] = $label;
+
     return $label;
 }
 
