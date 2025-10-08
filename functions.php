@@ -6,7 +6,7 @@ function sparqlQuery(string $sparqlQuery): array {
             'header' => implode("\r\n", [
                 "Accept: application/sparql-results+json",
                 "Accept-Language: en",
-                "User-Agent: WikidataQuickStatementsBot/1.0 (https://your.domain/; your@email.com)"
+                "User-Agent: WikidataQuickStatementsBot/1.0 (https://veradekok.nl/contact/)"
             ]) . "\r\n"
         ]
     ];

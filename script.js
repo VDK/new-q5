@@ -107,31 +107,28 @@ function sendQS(){
   const win = window.open(url, '_blank');
   win.focus();
 }
-
-$(document).ready(function() {
-  $("#close").click(function() {
-    $("#notice").fadeOut();
-    $("#reopen").fadeIn();
-    sendActionToController('close'); // Send action 'close' to controller
-  });
-
-  $("#reopen").click(function() {
-    $("#notice").fadeIn();
-    $("#reopen").fadeOut();
-    sendActionToController('reopen'); // Send action 'reopen' to controller
-  });
-
+$(function () {
   function sendActionToController(action) {
     $.ajax({
       type: "GET",
-      url: "notice_controller.php", // Replace with the actual URL of your PHP controller file
-      data: { action: action },
-      success: function(response) {
-        console.log("Action sent to controller: " + action);
-      },
-      error: function(xhr, status, error) {
-        console.error("Error sending action to controller: " + error);
-      }
+      url: "notice_controller.php",
+      data: { action, ajax: 1 },               // flag this as ajax
+    }).always(function () {
+      setTimeout(function () { location.reload(); }, 50); // ensure cookie persisted
     });
   }
+
+  $("#close").on("click", function (e) {
+    e.preventDefault();
+    $("#notice").fadeOut();
+    $("#reopen").fadeIn();
+    sendActionToController("close");
+  });
+
+  $("#reopen").on("click", function (e) {
+    e.preventDefault();
+    $("#notice").fadeIn();
+    $("#reopen").fadeOut();
+    sendActionToController("reopen");
+  });
 });

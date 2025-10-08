@@ -1,6 +1,8 @@
 <?php
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 include_once 'controller.php';
-
+require_once 'notice_controller.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,13 +53,15 @@ include_once 'controller.php';
             This site requires JavaScript.
           </div>
         </noscript>
-<div id="notice" <?php if ($notice_closed) echo 'style="display: none;"'; ?>>
-  <a href="#" id="close" alt="close">x</a>
+<div id="notice" <?php if (get_notice_closed()) echo 'style="display: none;"'; ?>>
+  <a href="#" id="close" aria-label="close">x</a>
   <p>This is a small form for adding or updating a person's data in <a href="https://www.wikidata.org/wiki/Wikidata:Main_Page" target="_blank">Wikidata</a>.</p>
   <p>For a full list of features and disclaimers, please consult the <a href="https://github.com/VDK/new-q5/blob/main/README.md">README</a>.</p>
   <p>Please make sure new items conform to the <a href="https://www.wikidata.org/wiki/Wikidata:Notability" target="_blank">notability standards</a>, especially those for <a href="https://www.wikidata.org/wiki/Wikidata:Living_people" target="_blank">living people</a>.</p>
 </div>
-<a href="#" id="reopen" alt="reopen" <?php if (!$notice_closed) echo 'style="display: none;"'; ?>>?</a>
+
+<a href="#" id="reopen" aria-label="reopen" <?php if (!get_notice_closed()) echo 'style="display: none;"'; ?>>?</a>
+
 
 
         <p>Personal details:</p>
@@ -93,13 +97,13 @@ include_once 'controller.php';
               <input type="text" id="ref_lang" placeholder="lang" name="ref_lang" style="width:50px" maxlength="3" value="en" />
               <input type="text" id="ref_title" name="ref_title" />
             </div>
-            <label for="ref_pubdate">publcation date</label>
+            <label for="ref_pubdate">publication date</label>
             <input type="date" id="ref_pubdate"  name="ref_pubdate" />
             <label for="ref_authors">author</label>
             <input type="text" id="ref_authors"  name="ref_authors" />
 
 
-           <div id="description"> <input id="described_by_source" type="checkbox" name="described_by_source" <?php echo $described_by_source; ?> />
+           <div id="description"> <input type="checkbox" id="described_by_source" name="described_by_source" <?= described_by_source() ?>>
             <label id="described_label" for="described_by_source">Include reference as <a href="https://www.wikidata.org/wiki/Property:P973" target="_blank">described by url (P973)</a> statement</label></div>
 
           </div>

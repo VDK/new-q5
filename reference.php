@@ -53,25 +53,37 @@ class reference
 	public function getTitle(){
 		return $this->title;
 	}
-	public function setLanguage($value){
-		$value = trim(strtolower(strip_tags($value)));
-		$value = preg_replace('/^(\w{2,3}).+/', "$1", $value);
-		if ( $value != '' && !in_array($value, array("en", "eng"))){
-			$this->lang = $value;
-			$query = 'SELECT DISTINCT ?qid  WHERE {
-                ?language wdt:P424 "'.$this->lang.'" . 
-       			?language wdt:P31 ?subclass_language.
-       			?subclass_language wdt:P279 * wd:Q34770 .
-       			hint:Query hint:optimizer "None".
-       			BIND( REPLACE( str(?language), \'http://www.wikidata.org/entity/\', \'\') as ?qid)
-      			}LIMIT 1';
-			$data = sparqlQuery($query);
-			foreach ($data['results']['bindings'] as $result){
-				$this->langQID = $result['qid']['value'];
-			}
-		}
+	public function setLanguage($value) {
+	    $value = strtolower(trim(strip_tags($value)));
+	    $value = preg_replace('/^([a-z]{2,3}).*/', '$1', $value);
 
+	    if ($value && !in_array($value, ['en', 'eng'])) {
+	        $this->lang = $value;
+
+	        // Local cache for speed
+	        $cache = ['nl' => 'Q7411', 'fr' => 'Q150', 'de' => 'Q188'];
+	        if (isset($cache[$value])) {
+	            $this->langQID = $cache[$value];
+	            return;
+	        }
+
+	        $query = sprintf(
+	            'SELECT DISTINCT ?qid WHERE {
+	                ?language wdt:P424 "%s" .
+	                ?language wdt:P31 ?subclass_language .
+	                ?subclass_language wdt:P279* wd:Q34770 .
+	                BIND(REPLACE(STR(?language), "http://www.wikidata.org/entity/", "") AS ?qid)
+	            } LIMIT 1',
+	            $value
+	        );
+
+	        $data = sparqlQuery($query);
+	        if (!empty($data['results']['bindings'][0]['qid']['value'])) {
+	            $this->langQID = $data['results']['bindings'][0]['qid']['value'];
+	        }
+	    }
 	}
+
 	public function getLanguage(){
 		return $this->lang;
 	}
