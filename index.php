@@ -79,8 +79,56 @@ require_once 'notice_controller.php';
         <input type="text" id="dod"  name='dod'/ >
         <label for="description">short description</label>
         <input type="text" id="description" name='description' />
-        <label for="qs">custom QuickStatement</label>
-        <input type="text" id="qs" name='qs' />
+   
+        <!-- Custom statements (repeatable) -->
+<div class="pv-list" id="pv_list" data-imdb-pid="P345">
+  <div class="pv-row">
+    <button type="button" class="pv-remove" aria-label="Remove statement">✕</button>
+    <!-- Property -->
+    <div class="pv-field pv-prop">
+      <label for="pv_prop">Property (P…)</label>
+      <input type="text" id="pv_prop" autocomplete="off" placeholder="">
+      <ul class="pv-suggest" id="pv_prop_results" role="listbox"></ul>
+      <div class="pv-meta" id="pv_prop_meta" aria-live="polite"></div>
+    </div>
+
+    <!-- Value: Q-item -->
+    <div class="pv-field pv-value pv-value-item" id="pv_value_item">
+      <label for="pv_value_q">Value (Q…)</label>
+      <input type="text" id="pv_value_q" autocomplete="off" placeholder="">
+      <ul class="pv-suggest" id="pv_value_results" role="listbox"></ul>
+      <div class="pv-meta" id="pv_value_meta" aria-live="polite"></div>
+    </div>
+
+    <!-- Value: External identifier -->
+    <div class="pv-field pv-value pv-value-external" id="pv_value_ext" hidden>
+      <label for="pv_value_ext_input">External identifier value</label>
+      <input type="text" id="pv_value_ext_input" placeholder="">
+    </div>
+
+    <!-- Hidden, authoritative fields submitted to PHP -->
+    <input type="hidden" class="prop_pid  prop_pid_0"  name="pv[0][p]">
+    <input type="hidden" class="value_qid value_qid_0" name="pv[0][v]">
+    <input type="hidden" class="ext_val  ext_val_0"  name="pv[0][ext]">
+
+    <!-- Options -->
+    <div class="pv-field pv-options">
+ 
+      <input type="checkbox" id="pv_ref_0" name="pv[0][ref]" checked>
+           <label for="pv_ref_0">Add ref</label>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="pv-toolbar">
+  <button type="button" class="button" id="pv_add_row" alt="add statement">Add</button>
+</div>
+
+<div style="clear:both;"/>
+
+
         </div>
         <div id='possible_match' >
           <input type="hidden" name="person_QID" id="person_QID"/>

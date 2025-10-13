@@ -12,14 +12,15 @@ class reference
 	private $langQID = 'Q1860'; //English
 	private $authors = "";
 	private $title   = null;
-	private $pubdate = null;
+	protected ?DateTimeImmutable $pubDate = null;
 	private $today = null;	
-	function __construct($url='', $lang='', $authors = '', $title = '', $pubdate = ''){
+
+	function __construct($url='', $lang='', $authors = '', $title = '', $pubDate = ''){
 		self::setURL($url);
 		self::setLanguage($lang);
 		self::setAuthors($authors);
 		self::setTitle($title);
-		self::setPubDate($pubdate);
+		$this->setPubDate($pubDate);
 	}
 	public function setURL($value){
   		if(filter_var($value, FILTER_VALIDATE_URL)){
@@ -29,21 +30,31 @@ class reference
 			$this->langQID = 'Q1860'; //English
 			$this->authors = "";
 			$this->title   = null;
-			$this->pubdate = null;
+			$this->pubDate = null;
 		}
 		$this->today   = new DateTime();
 	}
 	public function getURL(){
 		return $this->url;
 	}
-	public function setPubDate($value){
-		if (trim($value) != ''){
-			$this->pubdate =  DateTime::createFromFormat("Y-m-d",date('Y-m-d',  strtotime($value)));
-		}
-	}
-	public function getPubDate(){
-		return $this->pubdate;
-	}
+	public function setPubDate($value): void {
+        if ($value instanceof DateTimeInterface) {
+            $this->pubDate = DateTimeImmutable::createFromInterface($value);
+        } elseif (is_string($value) && trim($value) !== '') {
+            try { $this->pubDate = new DateTimeImmutable($value); } catch (\Throwable $e) { $this->pubDate = null; }
+        } else {
+            $this->pubDate = null;
+        }
+    }
+
+    public function getPubDate(): ?DateTimeImmutable {
+        return $this->pubDate;
+    }
+
+    public function getPubDateString(string $format = 'Y-m-d'): string {
+        return $this->pubDate ? $this->pubDate->format($format) : '';
+    }
+
 	public function setTitle($value){
 		$this->title = strip_tags($value);
 		//whatevere's after the pipe is probably "| Local Newspaper"
@@ -121,9 +132,9 @@ class reference
 					$qs .= '|P2093|"'.$author.'"';
 				}
 			}
-			if ($this->pubdate != null){
+			if ($this->pubDate != null){
 				//P577 = publication date
-				$qs .= '|P577|+'.$this->pubdate->format( 'Y-m-d' ).'T00:00:00Z/11';
+				$qs .= '|P577|+'.$this->pubDate->format( 'Y-m-d' ).'T00:00:00Z/11';
 			}
 			//P813 = retrieved
 			$qs .= '|P813|+'.$this->today->format( 'Y-m-d' ).'T00:00:00Z/11'; 
@@ -150,9 +161,9 @@ class reference
 					$qs .= '|S2093|"'.$author.'"';
 				}
 			}
-			if ($this->pubdate != null){
+			if ($this->pubDate != null){
 				//P577 = publication date
-				$qs .= '|S577|+'.$this->pubdate->format( "Y-m-d" ).'T00:00:00Z/11';
+				$qs .= '|S577|+'.$this->pubDate->format( "Y-m-d" ).'T00:00:00Z/11';
 			}
 			//P813 = retrieved
 			$qs .= '|S813|+'.$this->today->format( "Y-m-d" ).'T00:00:00Z/11'; 

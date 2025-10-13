@@ -1,5 +1,4 @@
 <?php
-include_once 'citoid_ref.php';
 
 
 
@@ -24,26 +23,15 @@ function wd_api_query(array $params) {
     return json_decode($response, true);
 }
 
-
-
-if(isset($_GET['url'])){
-	$url = urldecode(strip_tags($_GET['url']));
-	$ref = new citoidRef($url);	
-	$date = '';
-	if ($ref->getPubDate() != null){
-		$date = $ref->getPubDate()->format("Y-m-d");
-	}
-	echo json_encode(array(
-		"url" 		=> $ref->getURL(),
-		"title" 	=> $ref->getTitle(),
-		"language" 	=> $ref->getLanguage(),
-		"authors" 	=> $ref->getAuthors(),
-		"pubdate" 	=> $date
-	));
-
-	
-
+function send_json($payload, int $status = 200) {
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload);
+    exit;
 }
+
+
+
 
 
 function getLabel($qid, &$label_cache, $lang = "en") {
@@ -200,4 +188,93 @@ if (isset($_GET['srsearch'])) {
 		echo json_encode('nee');
 	}
 }
+
+
+
+
+// ---- P+V picker endpoints ----
+// --- New-Q5: P+V picker endpoints ---
+
+// ---- New-Q5: P+V picker endpoints ----
+
+// Property search (only item-valued or external-id)
+if (isset($_GET['pv']) && $_GET['pv'] === 'propsearch') {
+    $q    = trim($_GET['q'] ?? '');
+    $lang = preg_replace('/[^a-z\-]/i', '', $_GET['lang'] ?? 'en');
+
+    if ($q === '') send_json([]);
+
+    // 1) search properties
+    $s = wd_api_query([
+        'action'   => 'wbsearchentities',
+        'format'   => 'json',
+        'type'     => 'property',
+        'search'   => $q,
+        'language' => $lang,
+        'uselang'  => $lang,
+        'limit'    => 20
+    ]);
+    $hits = $s['search'] ?? [];
+    if (!$hits) send_json([]);
+
+    // 2) fetch datatypes for those PIDs (single batch)
+    // Note: arrow fn requires PHP 7.4+. If older, use an anonymous function.
+    $ids = array_values(array_unique(array_filter(array_map(fn($h) => $h['id'] ?? '', $hits))));
+    $e   = wd_api_query([
+        'action' => 'wbgetentities',
+        'format' => 'json',
+        'ids'    => implode('|', $ids),
+        'props'  => 'datatype'
+    ]);
+    $entities = $e['entities'] ?? [];
+
+    // keep only wikibase-item or external-id
+    $out = [];
+    foreach ($hits as $h) {
+        $pid = $h['id'] ?? '';
+        if (!$pid) continue;
+        $dt = $entities[$pid]['datatype'] ?? '';
+        if ($dt === 'wikibase-item' || $dt === 'external-id') {
+            $out[] = [
+                'id'          => $pid,
+                'label'       => $h['label'] ?? '',
+                'description' => $h['description'] ?? '',
+                'datatype'    => $dt
+            ];
+        }
+    }
+    send_json($out);
+}
+
+// Item (Q) search
+if (isset($_GET['pv']) && $_GET['pv'] === 'itemsearch') {
+    $q    = trim($_GET['q'] ?? '');
+    $lang = preg_replace('/[^a-z\-]/i', '', $_GET['lang'] ?? 'en');
+
+    if ($q === '') send_json([]);
+
+    $s = wd_api_query([
+        'action'   => 'wbsearchentities',
+        'format'   => 'json',
+        'type'     => 'item',
+        'search'   => $q,
+        'language' => $lang,
+        'uselang'  => $lang,
+        'limit'    => 20
+    ]);
+
+    $out = [];
+    foreach (($s['search'] ?? []) as $h) {
+        $out[] = [
+            'id'          => $h['id'] ?? '',
+            'label'       => $h['label'] ?? '',
+            'description' => $h['description'] ?? ''
+        ];
+    }
+    send_json($out);
+}
+
+
+
+
 ?>

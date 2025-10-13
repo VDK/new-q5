@@ -25,43 +25,68 @@ function sparqlQuery(string $sparqlQuery): array {
 
 
 
-function searchWikidataEntity($searchTerm, $p31Filters = [], $limit = 3) {
-    $apiUrl = 'https://www.wikidata.org/w/api.php';
-
-    $srsearch = '';
-    if (!empty($p31Filters)) {
-        $parts = array_map(function ($qid) {
-            return "P31=$qid";
-        }, $p31Filters);
-
-        $srsearch .= 'haswbstatement:"' . implode('|', $parts) . '" ';
-    }
-    $srsearch .= '"' . $searchTerm . '"';
-
+function searchWikidataEntity(string $label, array $allowedInstanceOf = []): array {
     $params = [
-        'action'   => 'query',
-        'format'   => 'json',
-        'list'     => 'search',
-        'srsearch' => $srsearch,
-        'srlimit'  => $limit,
-        'utf8'     => 'true'
+        'action'          => 'wbsearchentities',
+        'format'          => 'json',
+        'language'        => 'en',
+        'search'          => $label,
+        'type'            => 'item',
+        'limit'           => 10,
+        'strictlanguage'  => 1,
+        // 'uselang'      => 'en', // optional
     ];
+    $url = 'https://www.wikidata.org/w/api.php?' . http_build_query($params);
 
-    $url = $apiUrl . '?' . http_build_query($params);
-    $response = @file_get_contents($url);
-    if ($response === false) return [];
+    static $ctx = null;
+    if ($ctx === null) {
+        $ctx = stream_context_create([
+            'http' => [
+                'method'  => 'GET',
+                'header'  => implode("\r\n", [
+                    'Accept: application/json',
+                    'Accept-Language: en',
+                    'User-Agent: New-Q5/2.0 (https://veradekok.nl/contact)'
+                ]) . "\r\n",
+                'timeout' => 8,
+            ]
+        ]);
+    }
 
-    $data = json_decode($response, true);
-    $results = $data['query']['search'] ?? [];
-    return array_map(function ($entry) {
-        return [
-            'id' => $entry['title'],
-            'label' => $entry['title'], // placeholder label
-            'description' => $entry['snippet'] ?? ''
+    $json = @file_get_contents($url, false, $ctx);
+    if ($json === false) return [];
+
+    $data = json_decode($json, true);
+    $hits = [];
+    foreach ($data['search'] ?? [] as $hit) {
+        $hits[] = [
+            'id'    => $hit['id'] ?? null,
+            'label' => $hit['label'] ?? '',
         ];
-    }, array_filter($results, function ($r) {
-        return preg_match('/^Q\d+$/', $r['title'] ?? '');
-    }));
+    }
+
+    // Optional: filter by instance-of using one batched SPARQL query.
+    if ($allowedInstanceOf) {
+        $ids = array_column($hits, 'id');
+        if ($ids) {
+            $values = 'wd:' . implode(' wd:', array_map('trim', $ids));
+            $allow  = 'wd:' . implode(' wd:', array_map('trim', $allowedInstanceOf));
+            $sparql = <<<SPARQL
+SELECT ?item WHERE {
+  VALUES ?item { $values }
+  ?item wdt:P31 ?inst .
+  VALUES ?inst { $allow }
+}
+SPARQL;
+            $ok = [];
+            foreach ((sparqlQuery($sparql)['results']['bindings'] ?? []) as $row) {
+                $ok[] = basename($row['item']['value']);
+            }
+            $hits = array_values(array_filter($hits, fn($h) => in_array($h['id'], $ok, true)));
+        }
+    }
+
+    return $hits;
 }
 
 

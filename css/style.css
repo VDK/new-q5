@@ -272,3 +272,192 @@ label{
 	margin-top: -10px;
 	margin-bottom:0px;
 }
+
+/* --- Repeatable P+V rows -------------------------------------------------- */
+
+/* Tunables */
+:root {
+  --pv-gap: 12px;
+  --pv-checkbox-col: 56px;      /* width of options column */
+  --pv-label-line: 22px;         /* approx label+gap height; tweak to align checkbox with inputs */
+  --pv-border: 1px solid #ddd;
+  --pv-radius: 8px;
+
+  --pv-remove-size: 20px;        /* ✕ chip size */
+  --pv-remove-bg: rgba(0,0,0,.06);
+  --pv-remove-bg-hover: rgba(0,0,0,.12);
+}
+
+/* List container */
+.pv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* --- Repeatable P+V rows -------------------------------------------------- */
+/* Tunables */
+:root{
+  --pv-gap: 12px;
+  --pv-col-prop-min: 60px;
+  --pv-col-prop-max: 220px;
+  --pv-checkbox-col: 56px;
+
+  --pv-border: 1px solid #ddd;
+  --pv-radius: 8px;
+
+  --pv-label-offset: 17px;        /* nudge options down to align with value input */
+  --pv-remove-size: 18px;
+  --pv-remove-bg: rgba(0,0,0,.06);
+  --pv-remove-bg-hover: rgba(0,0,0,.12);
+}
+
+/* List wrapper */
+.pv-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* One P+V unit: grid = prop | value | options */
+.pv-row{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(var(--pv-col-prop-min), var(--pv-col-prop-max)) minmax(0,1fr) var(--pv-checkbox-col);
+  grid-template-areas:"prop value options";
+  gap:var(--pv-gap);
+  align-items:start;
+  box-sizing:border-box;
+  border:var(--pv-border);
+  border-radius:var(--pv-radius);
+  padding:10px;
+  background:#fff;
+  overflow:visible; /* allow dropdowns to overflow */
+}
+.pv-row:focus-within{
+  border-color:#9ec8ff;
+  box-shadow:0 0 0 2px rgba(46,132,255,.12);
+}
+
+/* Grid areas */
+.pv-row .pv-prop{ grid-area:prop; position:relative; }
+.pv-row .pv-value{ grid-area:value; position:relative; min-width:0; }
+.pv-row .pv-options{
+  grid-area:options;
+  align-self:start;
+  justify-self:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  margin-top:var(--pv-label-offset);
+}
+
+/* Field chrome */
+.pv-field{ position:relative; }
+.pv-field label{ display:block; font-weight:600; margin-bottom:4px; }
+.pv-field input[type="text"]{
+  width:100%;
+  padding:6px 8px;
+  border:1px solid #ccc;
+  border-radius:4px;
+  box-sizing:border-box;
+}
+
+/* Checkbox presentation */
+.pv-row .pv-options input[type="checkbox"]{
+  width:40px;
+  height:40px;
+  margin:0;
+}
+.pv-row .pv-options label{
+  margin:0;
+  font-size:12px;
+  line-height:1.1;
+  text-align:center;
+}
+
+/* Picked state */
+.pv-picked{ border-color:#4caf50!important; background:#f6fff6; }
+
+/* Autocomplete dropdown */
+.pv-suggest{
+  display:none;
+  position:absolute;
+  left:0; right:0;
+  z-index:50;
+  max-height:280px;
+  overflow-y:auto;
+  margin-top:2px;
+  padding:4px 0;
+  list-style:none;
+  background:#fff;
+  border:1px solid #d9d9d9;
+  border-radius:6px;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+.pv-option{
+  padding:8px 10px;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:auto auto;
+  grid-column-gap:8px;
+  grid-row-gap:2px;
+}
+.pv-option .pv-id{
+  grid-row:1 / span 2;
+  align-self:start;
+  font:12px ui-monospace,Menlo,Consolas,monospace;
+  padding:2px 6px;
+  border:1px solid #e4e4e4;
+  border-radius:999px;
+  background:#f7f7f7;
+  color:#333;
+}
+.pv-option .pv-label{ font-weight:600; }
+.pv-option .pv-desc{ color:#666; font-size:12px; }
+.pv-option:hover,
+.pv-option.is-active{ background:#eef5ff; }
+
+/* Remove (✕) button */
+.pv-remove{
+  position:absolute;
+  top:6px;
+  right:8px;
+  width:var(--pv-remove-size);
+  height:var(--pv-remove-size);
+  min-width:0;
+  padding:0;
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:4px;
+  background:var(--pv-remove-bg);
+  color:#777;
+  line-height:1;
+  font-size:12px;
+  cursor:pointer;
+  z-index:10;
+  transition:background .15s, color .15s, opacity .15s;
+}
+.pv-remove:hover,
+.pv-remove:focus{
+  background:var(--pv-remove-bg-hover);
+  color:#c00;
+  outline:none;
+}
+
+/* Keep options below the ✕ in stacking order */
+.pv-options{ position:relative; z-index:1; }
+
+/* Responsive: prop full width; value + options side-by-side */
+@media (max-width:680px){
+  .pv-row{
+    grid-template-columns:1fr var(--pv-checkbox-col);
+    grid-template-areas:
+      "prop prop"
+      "value options";
+  }
+}
