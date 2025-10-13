@@ -299,6 +299,7 @@ function selectOption() {
     setId($row, 'pv_ref_0',             `pv_ref_${idx}`);
     $row.find(`#pv_ref_${idx}`).attr('name', `pv[${idx}][ref]`);
 
+    $row.find('.prop_pid, .value_qid, .ext_val').remove();
     ensureHiddenInputs($row, idx);
 
     // clear values & UI
