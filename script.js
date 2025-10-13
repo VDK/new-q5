@@ -262,9 +262,11 @@ function selectOption() {
   const $template = $list.find('.pv-row').first().clone(false, false);
 
   function setId($row, oldId, newId){
-    const $el = $row.find('#' + oldId);
+    let $el = $row.find('#' + oldId);
+    if (!$el.length) $el = $row.find(`[id^="${oldId}_"]`).first();
     if ($el.length) $el.attr('id', newId);
     $row.find(`label[for="${oldId}"]`).attr('for', newId);
+    $row.find(`label[for^="${oldId}_"]`).attr('for', newId);
   }
 
   // ensure hidden ID fields exist (so we submit IDs, not labels)
@@ -277,7 +279,7 @@ function selectOption() {
       $row.append(`<input type="hidden" class="ext_val ext_val_${idx}" name="pv[${idx}][ext]">`);
   }
 
-  function renumberRow($row, idx){
+  function renumberRow($row, idx, keepValues){
     // IDs & names for visible inputs (remove name so they don't submit labels)
     setId($row, 'pv_prop',              `pv_prop_${idx}`);
     setId($row, 'pv_prop_results',      `pv_prop_results_${idx}`);
@@ -300,14 +302,16 @@ function selectOption() {
     ensureHiddenInputs($row, idx);
 
     // clear values & UI
-    $row.find('input[type="text"]').val('').removeClass('pv-picked');
-    $row.find('.pv-suggest').hide().empty();
-    $row.find(`#pv_ref_${idx}`).prop('checked', true);
-    $row.find(`#pv_value_ext_${idx}`).attr('hidden', true);
-    $row.find(`#pv_value_item_${idx}`).attr('hidden', false);
+    if (!keepValues) {
+      $row.find('input[type="text"]').val('').removeClass('pv-picked');
+      $row.find('.pv-suggest').hide().empty();
+      $row.find(`#pv_ref_${idx}`).prop('checked', true);
+      $row.find(`#pv_value_ext_${idx}`).attr('hidden', true);
+      $row.find(`#pv_value_item_${idx}`).attr('hidden', false);
+    }
   }
 
-  function toggleValueUI($row, idx, isExternal){
+  function toggleValueUI($row, idx, isExternal, suppressFocus){
     const $item = $row.find(`#pv_value_item_${idx}`);
     const $ext  = $row.find(`#pv_value_ext_${idx}`);
     if (isExternal) {
@@ -317,7 +321,7 @@ function selectOption() {
       $row.find(`#pv_value_q_${idx}`).val('').removeClass('pv-picked');
       // default: external → turn OFF reference
       $row.find(`#pv_ref_${idx}`).prop('checked', false);
-      $row.find(`#pv_value_ext_input_${idx}`).trigger('focus');
+      if (!suppressFocus) $row.find(`#pv_value_ext_input_${idx}`).trigger('focus');
     } else {
       $ext.attr('hidden', true);
       $item.attr('hidden', false);
@@ -325,7 +329,7 @@ function selectOption() {
       $row.find(`#pv_value_ext_input_${idx}`).val('').removeClass('pv-picked');
       // item-valued → turn ON reference by default
       $row.find(`#pv_ref_${idx}`).prop('checked', true);
-      $row.find(`#pv_value_q_${idx}`).trigger('focus');
+      if (!suppressFocus) $row.find(`#pv_value_q_${idx}`).trigger('focus');
     }
   }
 
@@ -413,14 +417,22 @@ function selectOption() {
 
     // Property search (datatype comes from server)
     bindSuggest($pIn, $pList, 'propsearch', function(p){
-      // show label in input, store PID in hidden
       $pIn.val(p.label || p.id).addClass('pv-picked');
       $row.find(`.prop_pid_${idx}`).val(p.id);
-      $pMeta.text(''); // keep compact
-      toggleValueUI($row, idx, p.datatype === 'external-id');
-      if (p.datatype === 'external-id') $row.find(`#pv_value_ext_input_${idx}`).trigger('focus');
-      else $qIn.trigger('focus');
+      $pMeta.text('');
+
+      const isExt = p.datatype === 'external-id';
+      toggleValueUI($row, idx, isExt, false);
+
+      const advance = !$pIn.data('noAdvance');   // ← only jump on real user pick
+      if (advance) {
+        if (isExt) $row.find(`#pv_value_ext_input_${idx}`).trigger('focus');
+        else $qIn.trigger('focus');
+      }
+      $pIn.data('noAdvance', false);            // reset for subsequent user picks
     });
+
+
 
     // Q-item search
     bindSuggest($qIn, $qList, 'itemsearch', function(q){
@@ -449,33 +461,13 @@ function selectOption() {
   renumberRow($first, 0);
   wireRow($first, 0);
 
-  // Prefill from ?property=P105|P345 → make extra rows too
-  (function preloadFromURL(){
-    const param = new URLSearchParams(location.search).get('property');
-    if (!param) return;
-    const pids = param.split('|').map(s=>s.trim()).filter(s=>/^P\d+$/.test(s));
-    if (!pids.length) return;
 
-    // first row: set PID text and let user confirm via dropdown
-    $first.find('#pv_prop_0').val(pids[0]).trigger('input');
-
-    // remaining PIDs: create rows prefilled with PID text; IMDb rows show ext field
-    for (let i = 1; i < pids.length; i++){
-      const idx = $list.find('.pv-row').length;
-      const $clone = $template.clone(false, false);
-      renumberRow($clone, idx);
-      $clone.find(`#pv_prop_${idx}`).val(pids[i]).trigger('input');
-      if (pids[i] === IMDbPID) toggleValueUI($clone, idx, true);
-      $list.append($clone);
-      wireRow($clone, idx);
-    }
-  })();
 
   // Add statement
   $('#pv_add_row').off('click.pv').on('click.pv', function(){
     const idx = $list.find('.pv-row').length;
     const $clone = $template.clone(false, false);
-    renumberRow($clone, idx);
+    renumberRow($clone, idx, false);
     $list.append($clone);
     wireRow($clone, idx);
   });
@@ -502,7 +494,7 @@ function reindexAllRows(){
     const $r = $(this);
     // wipe any old dynamic event handlers before rewiring
     $r.find('input, .pv-suggest').off('.pv');
-    renumberRow($r, i);
+    renumberRow($r, i, true);
     wireRow($r, i);
   });
 }
@@ -513,9 +505,107 @@ function reindexAllRows(){
 $(document).off('click.pv', '.pv-remove').on('click.pv', '.pv-remove', function(){
   const $row = $(this).closest('.pv-row');
   $row.remove();
-  ensureAtLeastOneRow();
   reindexAllRows();
+  syncURLtoCurrentPIDs && syncURLtoCurrentPIDs();
 });
+
+
+
+/* ===== Server-prefill + URL stickiness for P only ===== */
+
+// Ensure first row is renumbered/wired once
+function ensureFirstRowReady(){
+  const $listEl = $('#pv_list');
+  const $first  = $listEl.find('.pv-row').first();
+  // If it still has base IDs, give it index 0 and wire it
+  if ($first.find('#pv_prop').length) {
+    renumberRow($first, 0);
+    wireRow($first, 0);
+  }
+}
+
+// Apply [{id,label,datatype}] to rows (no values)
+function populatePVFromProps(props){
+  if (!Array.isArray(props) || !props.length) return;
+
+  const $listEl = $('#pv_list');
+  ensureFirstRowReady();
+
+  function applyOne($row, idx, meta){
+    const $pIn   = $row.find(`#pv_prop_${idx}`);
+    const $pList = $row.find(`#pv_prop_results_${idx}`);
+
+    // label + hidden PID
+    $pIn.val(meta.label || meta.id).addClass('pv-picked').data('noAdvance', true);
+    $row.find(`.prop_pid_${idx}`).val(meta.id);
+
+    // flip value UI (no autofocus during prefill)
+    const isExt = meta.datatype === 'external-id';
+    toggleValueUI($row, idx, isExt, true);
+
+    // hard-close any stale suggestions
+    $pList.hide().empty();
+    $pIn.attr('aria-expanded','false');
+  }
+
+  // 1) Apply to the first existing row
+  applyOne($listEl.find('.pv-row').eq(0), 0, props[0]);
+
+  // 2) Create + wire + apply the rest, as you go
+  for (let i = 1; i < props.length; i++){
+    const idx  = $listEl.find('.pv-row').length;
+    const $row = $template.clone(false, false);
+    renumberRow($row, idx);
+    $listEl.append($row);
+    wireRow($row, idx);
+    applyOne($row, idx, props[i]);    // ← apply NOW, not later
+  }
+
+  $('#fullname').focus();
+}
+
+
+// Read current PIDs in order
+function currentPIDs(){
+  const out = [];
+  $('#pv_list .pv-row').each(function(i, row){
+    const pid = $(row).find(`.prop_pid_${i}`).val();
+    if (pid && /^P\d+$/i.test(pid)) out.push(pid.toUpperCase());
+  });
+  // de-dupe, keep order
+  return out.filter((v,i,a)=>a.indexOf(v)===i);
+}
+
+// Keep PIDs in URL (stickiness source)
+function syncURLtoCurrentPIDs(){
+  const pids = currentPIDs();
+  const url  = new URL(location.href);
+  if (pids.length) url.searchParams.set('property', pids.join('|'));
+  else url.searchParams.delete('property');
+  history.replaceState(null, '', url.toString());
+}
+
+// --- Boot: populate from server-provided data ---
+$(function(){
+  if (Array.isArray(window.PREFILL_PROPS) && window.PREFILL_PROPS.length){
+    populatePVFromProps(window.PREFILL_PROPS);
+  } else {
+    // No GET ?property= → leave as-is (no persistence of other fields)
+  }
+});
+
+// Save stickiness only when P’s change
+$(document)
+  .on('click', '#pv_add_row, .pv-remove', function(){
+    // let DOM update, then sync
+    setTimeout(syncURLtoCurrentPIDs, 0);
+  })
+  // after your existing prop-pick callback runs it adds .pv-picked; hook that
+  .on('input blur', '.pv-prop input[id^="pv_prop_"]', function(){
+    if ($(this).hasClass('pv-picked')) syncURLtoCurrentPIDs();
+  });
+
+
 
 
 

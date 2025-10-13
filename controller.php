@@ -3,6 +3,7 @@
 include_once 'person.php';
 include_once 'reference.php';
 include_once 'qs_helpers.php';
+include_once 'functions.php';
 $error = '';
 $qs = false;
 
@@ -27,6 +28,60 @@ function described_by_source() {
 $described_by_source  = described_by_source();
 setcookie("described_by_source", $described_by_source , time() +  (86400 * 30 * 100));
 
+/** Resolve GET ?property=P31|P569|... -> [{id,label,datatype}] */
+function fetch_prop_meta(array $pids, string $lang = 'en'): array {
+    // keep only P… and unique in order
+    $pids = array_values(array_unique(array_filter($pids, fn($s)=>preg_match('/^P\d+$/i',$s))));
+    if (!$pids) return [];
+
+    // wbgetentities
+    $url = 'https://www.wikidata.org/w/api.php?' . http_build_query([
+        'action'    => 'wbgetentities',
+        'ids'       => implode('|',$pids),
+        'props'     => 'labels|datatype',
+        'languages' => $lang,
+        'format'    => 'json'
+    ]);
+
+    static $ctx = null;
+    if ($ctx === null) {
+        $ctx = stream_context_create([
+            'http' => [
+                'method'  => 'GET',
+                'header'  => implode("\r\n", [
+                    'Accept: application/json',
+                    'Accept-Language: en',
+                    'User-Agent: New-Q5/2.0 (https://veradekok.nl/contact)'
+                ]) . "\r\n",
+                'timeout' => 10,
+            ]
+        ]);
+    }
+
+    $json = @file_get_contents($url, false, $ctx);
+    if ($json === false) return array_map(fn($id)=>['id'=>$id,'label'=>$id,'datatype'=>null], $pids);
+
+    $data = json_decode($json, true);
+    $entities = $data['entities'] ?? [];
+
+    $out = [];
+    foreach ($pids as $id) {
+        $e = $entities[$id] ?? [];
+        $label = $e['labels'][$lang]['value'] ?? $id;
+        $out[] = [
+            'id'       => $id,
+            'label'    => $label,
+            'datatype' => $e['datatype'] ?? null,
+        ];
+    }
+    return $out;
+}
+// Expose prefill props for this request (URL stickiness source of truth)
+$prefill_props = [];
+if (!empty($_GET['property'])) {
+    $raw = explode('|', $_GET['property']);
+    $prefill_props = fetch_prop_meta_from_ids($raw, $_GET['lang'] ?? 'en');
+}
 
 
 // Function to handle form submission
@@ -198,21 +253,6 @@ LAST|P31|Q5";
   return $qs;
 }
 
-
-function appendProp($qid = null, $prop = null, $ref = null){
-  $qs = '';
-  if ($qid == null){
-    $qid = "LAST";
-  }
-  $propLines = explode("\n", $prop);
-  foreach ($propLines as $propLine) {
-    if (trim($propLine) != ''){
-      $qs .= "\n".$qid."|".$propLine.$ref;
-    }
-  }
-  return $qs;
-
-}
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

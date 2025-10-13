@@ -39,6 +39,10 @@ require_once 'notice_controller.php';
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 <script src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 <script type="text/javascript" src="script.js"></script>
+<script>
+  window.PREFILL_PROPS = <?php echo json_encode($prefill_props ?: []); ?>;
+</script>
+
 </head>
 <body>
 
@@ -53,6 +57,11 @@ require_once 'notice_controller.php';
             This site requires JavaScript.
           </div>
         </noscript>
+<div id="top-icons">
+  <a href="#" id="reopen" aria-label="reopen" <?php if (!get_notice_closed()) echo 'style="display: none;"'; ?>>?</a>
+  <span id="share_slot_top"></span>
+</div>
+
 <div id="notice" <?php if (get_notice_closed()) echo 'style="display: none;"'; ?>>
   <a href="#" id="close" aria-label="close">x</a>
   <p>This is a small form for adding or updating a person's data in <a href="https://www.wikidata.org/wiki/Wikidata:Main_Page" target="_blank">Wikidata</a>.</p>

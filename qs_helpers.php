@@ -80,4 +80,20 @@ function _qs_fmt_value(string $v, bool $is_external_id=false): string {
 }
 
 
+function appendProp($qid = null, $prop = null, $ref = null){
+  $qs = '';
+  if ($qid == null){
+    $qid = "LAST";
+  }
+  $propLines = explode("\n", $prop);
+  foreach ($propLines as $propLine) {
+    if (trim($propLine) != ''){
+      $qs .= "\n".$qid."|".$propLine.$ref;
+    }
+  }
+  return $qs;
+
+}
+
+
 ?>

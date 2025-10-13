@@ -1,74 +1,11 @@
 <?php
 
 
-
-function wd_api_query(array $params) {
-    $url = 'https://www.wikidata.org/w/api.php?' . http_build_query($params);
-
-    static $context = null;
-    if ($context === null) {
-        $opts = [
-            "http" => [
-                "header" => "User-Agent: New-Q5/2.0 (https://veradekok.nl/contact)\r\n"
-            ]
-        ];
-        $context = stream_context_create($opts);
-    }
-
-    $response = file_get_contents($url, false, $context);
-    if ($response === false) {
-        throw new Exception("Wikidata API request failed: $url");
-    }
-
-    return json_decode($response, true);
-}
-
-function send_json($payload, int $status = 200) {
-    http_response_code($status);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($payload);
-    exit;
-}
+include_once 'functions.php';
 
 
-
-
-
-function getLabel($qid, &$label_cache, $lang = "en") {
-    // Check cache
-    if (isset($label_cache[$lang][$qid])) {
-        return $label_cache[$lang][$qid];
-    }
-    //prepare a cache for "mul"
-    if (!isset($label_cache['mul'])) {
-        $label_cache['mul'] = [];
-    }
-
-    // Query Wikidata API
-    $query = wd_api_query([
-        'format' => 'json',
-        'action' => 'wbgetentities',
-        'props'  => 'labels',
-        'ids'    => $qid
-    ]);
-
-    $entities = $query['entities'][$qid]['labels'] ?? [];
-
-    if (isset($entities[$lang]['value'])) {
-        $label = $entities[$lang]['value'];
-    } elseif (isset($entities['mul']['value'])) {
-        $label = $entities['mul']['value'];
-    } else {
-        $label = $qid; // fallback to QID
-    }
-
-    // Store in cache in both languages
-    $label_cache[$lang][$qid] = $label;
-    $label_cache['mul'][$qid] = $label;
-
-    return $label;
-}
-
+$labelCache = []; // shared cache for all getLabel() calls
+$langPref   = ['en','mul','nl'];
 
 function country_substitute($countries){
 	$new_countries = array();
@@ -102,17 +39,9 @@ function get_date_string($datavalue){
 	return substr($datavalue["time"], 1, $precision_cut);
 }
 
-$search_vars = array(
-	'action'=>'query',
-	'list'=>'search',
-	'utf8'=>'true',
-	'format'=>'json',
-	'srlimit'=>'20');
 
 
-$wbgetclaims = array('action'=> 'wbgetclaims','format'=>'json');
 
-$label_cache = array("en" => array());
 
 if (isset($_GET['srsearch'])) {
     $search_vars = [
@@ -121,130 +50,182 @@ if (isset($_GET['srsearch'])) {
         'utf8'    => 'true',
         'format'  => 'json',
         'srlimit' => '20',
-        // keep your current quoting; remove the quotes if you prefer plain text search
         'srsearch'=> "haswbstatement:P31=Q5 '" . trim($_GET['srsearch']) . "'",
     ];
 
     $resp  = wd_api_query($search_vars);
     $query = $resp['query'] ?? null;
     if (!$query) {
-        die("Request failed");
+        send_json([]); // no hard die(); return empty
     }
 
-	if ($query['searchinfo']['totalhits'] >= 1){
-		$results = array();
-		foreach ($query['search'] as $key => $search_result) {
-			$result = array(
-			'qitem'=> $search_result['title'],
-			'itemLabel' => getLabel($search_result['title'], $label_cache));
+    if (($query['searchinfo']['totalhits'] ?? 0) < 1) {
+        send_json([]); // no hits
+    }
 
-			$claimsResp = wd_api_query([
-			    'action' => 'wbgetclaims',
-			    'format' => 'json',
-			    'entity' => $search_result['title']
-			]);
-			$claims = $claimsResp['claims'] ?? [];
+    $results = [];
 
-			
-			$occupations = [];
-			if (!empty($claims['P106'])) {
-			    foreach ($claims['P106'] as $occ) {
-			        $occupations[] = getLabel($occ['mainsnak']['datavalue']['value']['id'], $label_cache);
-			    }
-			}
-			$occupations = array_unique($occupations);
-			$result['occupation'] = implode("/&shy;", $occupations);
+    foreach ($query['search'] as $search_result) {
+        $qid = $search_result['title'] ?? '';
+        if ($qid === '') { continue; }
 
-			$countries = [];
-			if (!empty($claims['P27'])) {
-			    foreach ($claims['P27'] as $c) {
-			        $countries[] = getLabel($c['mainsnak']['datavalue']['value']['id'], $label_cache);
-			    }
-			}
-			$countries = country_substitute(array_unique($countries));
-			$result['country'] = implode("/&shy;", $countries);
+        // label with nl→mul→en fallback (and per-request cache)
+        $itemLabel = getLabel($qid, $labelCache, $langPref);
 
-			if (isset($claims['P569'])){
-				$result['dateOfBirth'] = get_date_string($claims['P569'][0]["mainsnak"]["datavalue"]["value"]);
-			}
-			if (isset($claims['P570'])){
+        // claims for occupations, country, dates, image
+        $claimsResp = wd_api_query([
+            'action' => 'wbgetclaims',
+            'format' => 'json',
+            'entity' => $qid
+        ]);
+        $claims = $claimsResp['claims'] ?? [];
 
-				$result['dateOfDeath'] = get_date_string($claims['P570'][0]["mainsnak"]["datavalue"]["value"]);
-			}
-			if (isset($claims['P18'])){
-				$result['image'] = $claims['P18'][0]["mainsnak"]["datavalue"]["value"];
-			}
-			
-			$results[] = $result;
-		}
-		if (isset($results) && count($results) > 0){
-			echo json_encode($results);
-		}
-		else{
-			echo json_encode('nee');
-		}
-	}
-	else{
-		echo json_encode('nee');
-	}
+        // Occupations (P106)
+        $occupations = [];
+        if (!empty($claims['P106'])) {
+            foreach ($claims['P106'] as $occ) {
+                $oid = $occ['mainsnak']['datavalue']['value']['id'] ?? null;
+                if ($oid) {
+                    $occupations[] = getLabel($oid, $labelCache, $langPref);
+                }
+            }
+        }
+        $occupations = array_unique($occupations);
+
+        // Countries of citizenship (P27)
+        $countries = [];
+        if (!empty($claims['P27'])) {
+            foreach ($claims['P27'] as $c) {
+                $cid = $c['mainsnak']['datavalue']['value']['id'] ?? null;
+                if ($cid) {
+                    $countries[] = getLabel($cid, $labelCache, $langPref);
+                }
+            }
+        }
+        $countries = country_substitute(array_unique($countries));
+
+        $result = [
+            'qitem'       => $qid,
+            'itemLabel'   => $itemLabel,
+            'occupation'  => implode("/&shy;", $occupations),
+            'country'     => implode("/&shy;", $countries),
+        ];
+
+        if (!empty($claims['P569'][0]['mainsnak']['datavalue']['value'])) {
+            $result['dateOfBirth'] = get_date_string($claims['P569'][0]['mainsnak']['datavalue']['value']);
+        }
+        if (!empty($claims['P570'][0]['mainsnak']['datavalue']['value'])) {
+            $result['dateOfDeath'] = get_date_string($claims['P570'][0]['mainsnak']['datavalue']['value']);
+        }
+        if (!empty($claims['P18'][0]['mainsnak']['datavalue']['value'])) {
+            $result['image'] = $claims['P18'][0]['mainsnak']['datavalue']['value'];
+        }
+
+        $results[] = $result;
+    }
+
+    send_json($results);
 }
 
 
 
 
+
+
 // ---- P+V picker endpoints ----
-// --- New-Q5: P+V picker endpoints ---
 
 // ---- New-Q5: P+V picker endpoints ----
 
-// Property search (only item-valued or external-id)
+
+//make it possible to load P's labels
+
+if (!empty($_GET['ids'])) {
+    $ids  = array_filter(array_map('trim', explode('|', $_GET['ids'])));
+    $lang = $_GET['lang'] ?? 'en';
+
+    $out = [];
+    foreach ($ids as $id) {
+        if (!preg_match('/^P\d+$/', $id)) continue;
+        $label = getLabel($id, $labelCache, $lang);
+        $out[] = [
+            'id'       => $id,
+            'label'    => $label,
+            'datatype' => null // optionally fill later if you want
+        ];
+    }
+
+    send_json($out);
+    exit;
+}
+
+
+
+// Property search (reuse fetch_prop_meta_from_ids)
 if (isset($_GET['pv']) && $_GET['pv'] === 'propsearch') {
-    $q    = trim($_GET['q'] ?? '');
-    $lang = preg_replace('/[^a-z\-]/i', '', $_GET['lang'] ?? 'en');
+    $qRaw = (string)($_GET['q'] ?? '');
+    $q    = trim($qRaw);
+    $lang = preg_replace('/[^a-z\-]/i', '', (string)($_GET['lang'] ?? 'en')) ?: 'en';
 
-    if ($q === '') send_json([]);
+    if ($q === '' || mb_strlen($q) < 2) {
+        send_json([]);
+    }
 
-    // 1) search properties
-    $s = wd_api_query([
+    // 1) Search properties
+    $search = wd_api_query([
         'action'   => 'wbsearchentities',
         'format'   => 'json',
         'type'     => 'property',
         'search'   => $q,
         'language' => $lang,
         'uselang'  => $lang,
-        'limit'    => 20
+        'limit'    => 20,
     ]);
-    $hits = $s['search'] ?? [];
-    if (!$hits) send_json([]);
-
-    // 2) fetch datatypes for those PIDs (single batch)
-    // Note: arrow fn requires PHP 7.4+. If older, use an anonymous function.
-    $ids = array_values(array_unique(array_filter(array_map(fn($h) => $h['id'] ?? '', $hits))));
-    $e   = wd_api_query([
-        'action' => 'wbgetentities',
-        'format' => 'json',
-        'ids'    => implode('|', $ids),
-        'props'  => 'datatype'
-    ]);
-    $entities = $e['entities'] ?? [];
-
-    // keep only wikibase-item or external-id
-    $out = [];
-    foreach ($hits as $h) {
-        $pid = $h['id'] ?? '';
-        if (!$pid) continue;
-        $dt = $entities[$pid]['datatype'] ?? '';
-        if ($dt === 'wikibase-item' || $dt === 'external-id') {
-            $out[] = [
-                'id'          => $pid,
-                'label'       => $h['label'] ?? '',
-                'description' => $h['description'] ?? '',
-                'datatype'    => $dt
-            ];
-        }
+    $hits = is_array($search['search'] ?? null) ? $search['search'] : [];
+    if (!$hits) {
+        send_json([]);
     }
+
+    // 2) Extract PIDs in order (deduped)
+    $seen = [];
+    $ids  = [];
+    foreach ($hits as $h) {
+        $pid = strtoupper(trim((string)($h['id'] ?? '')));
+        if ($pid === '' || !preg_match('/^P\d+$/', $pid)) continue;
+        if (isset($seen[$pid])) continue;
+        $seen[$pid] = true;
+        $ids[] = $pid;
+    }
+    if (!$ids) {
+        send_json([]);
+    }
+
+    // 3) Reuse your helper for datatype gating + labels
+    $meta = fetch_prop_meta_from_ids($ids, $lang);
+    if (!$meta) {
+        send_json([]);
+    }
+
+    // 4) Merge search descriptions back in, keep meta order
+    $descById = [];
+    foreach ($hits as $h) {
+        $pid = strtoupper(trim((string)($h['id'] ?? '')));
+        if ($pid) $descById[$pid] = (string)($h['description'] ?? '');
+    }
+
+    $out = [];
+    foreach ($meta as $m) { // $m = ['id','label','datatype']
+        $pid = $m['id'];
+        $out[] = [
+            'id'          => $pid,
+            'label'       => $m['label'],
+            'description' => $descById[$pid] ?? '',
+            'datatype'    => $m['datatype'], // already filtered to wikibase-item/external-id
+        ];
+    }
+
     send_json($out);
 }
+
 
 // Item (Q) search
 if (isset($_GET['pv']) && $_GET['pv'] === 'itemsearch') {
