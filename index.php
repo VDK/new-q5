@@ -1,8 +1,8 @@
 <?php
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
-include_once 'controller.php';
-require_once 'notice_controller.php';
+include_once 'controllers/controller.php';
+require_once 'controllers/notice_controller.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -57,10 +57,7 @@ require_once 'notice_controller.php';
             This site requires JavaScript.
           </div>
         </noscript>
-<div id="top-icons">
-  <a href="#" id="reopen" aria-label="reopen" <?php if (!get_notice_closed()) echo 'style="display: none;"'; ?>>?</a>
-  <span id="share_slot_top"></span>
-</div>
+
 
 <div id="notice" <?php if (get_notice_closed()) echo 'style="display: none;"'; ?>>
   <a href="#" id="close" aria-label="close">x</a>
@@ -73,22 +70,33 @@ require_once 'notice_controller.php';
 
 
 
-        <p>Personal details:</p>
+        <p><h1>Create or update a person in Wikidata:</h1></p>
         <div>
-        <div class="flex">
-        <div style="width: 100%"><label for="fullname">name</label>
-        <input type="text" id="fullname"  name='fullname'/ ></div>
+   <div class="flex alias-anchor" id="alias-anchor">
+  <div style="width: 100%">
+    <label for="fullname">name</label>
+    <input type="text" id="fullname" name="fullname" />
+  </div>
 
-        <div><label for="age">age</label>
-        <input type="text" id="age"  name='age' style="width:100px;"/></div>
-      </div>
-       <label for="dob">date of birth</label>
-        <input type="text" id="dob"  name='dob' />
-        <label for="dod">date of death</label>
-        <input type="text" id="dod"  name='dod'/ >
-        <label for="description">short description</label>
-        <input type="text" id="description" name='description' />
-   
+  <div>
+    <label for="age">age</label>
+    <input type="text" id="age" name="age" style="width:100px;" />
+  </div>
+</div>
+
+<!-- alias suggestions and chosen aliases will appear below -->
+<div id="alias-suggest-container"></div>
+
+<label for="dob">date of birth</label>
+<input type="text" id="dob" name="dob" />
+
+<label for="dod">date of death</label>
+<input type="text" id="dod" name="dod" />
+
+<label for="description">short description</label>
+<input type="text" id="description" name="description" />
+
+  
         <!-- Custom statements (repeatable) -->
 <div class="pv-list" id="pv_list" data-imdb-pid="P345">
   <div class="pv-row">
@@ -124,7 +132,7 @@ require_once 'notice_controller.php';
     <div class="pv-field pv-options">
  
       <input type="checkbox" id="pv_ref_0" name="pv[0][ref]" checked>
-           <label for="pv_ref_0">Add ref</label>
+           <label for="pv_ref_0">Substantiate with the refference cited below</label>
     </div>
   </div>
 </div>
@@ -139,12 +147,14 @@ require_once 'notice_controller.php';
 
 
         </div>
-        <div id='possible_match' >
+        <div id='possible_match'   hidden>
+          <h1>Possible matches</h1>
           <input type="hidden" name="person_QID" id="person_QID"/>
+          <input type="hidden" name="description_suggestion" id="description_suggestion"/>
           <ul id='responses' ></ul>
         </div>
 
-        Reference:
+        <h1>Reference:</h1>
           <label for="ref_url">URL</label>
           <input type="text" id="ref_url" placeholder="https://" name='ref_url' />
 

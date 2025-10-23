@@ -1,4 +1,6 @@
 <?php
+
+
 function normalize_pv_from_post($pv_raw): array {
   if (!is_array($pv_raw)) return [];
   $is_booly = static fn($x) => in_array((string)$x, ['0','1','on','off'], true);

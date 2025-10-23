@@ -269,195 +269,350 @@ ul#responses > li > img.response_image{
 }
 label{
 	text-align: left;
-	margin-top: -10px;
+	margin-top: 0px;
 	margin-bottom:0px;
 }
 
-/* --- Repeatable P+V rows -------------------------------------------------- */
+
+input{
+  margin-bottom:5px;
+}
+
+/* ======================= Repeatable P+V rows (clean rewrite) ======================= */
 
 /* Tunables */
 :root {
   --pv-gap: 12px;
-  --pv-checkbox-col: 56px;      /* width of options column */
-  --pv-label-line: 22px;         /* approx label+gap height; tweak to align checkbox with inputs */
   --pv-border: 1px solid #ddd;
   --pv-radius: 8px;
-
-  --pv-remove-size: 20px;        /* ✕ chip size */
-  --pv-remove-bg: rgba(0,0,0,.06);
-  --pv-remove-bg-hover: rgba(0,0,0,.12);
-}
-
-/* List container */
-.pv-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-/* --- Repeatable P+V rows -------------------------------------------------- */
-/* Tunables */
-:root{
-  --pv-gap: 12px;
-  --pv-col-prop-min: 60px;
-  --pv-col-prop-max: 220px;
-  --pv-checkbox-col: 56px;
-
-  --pv-border: 1px solid #ddd;
-  --pv-radius: 8px;
-
-  --pv-label-offset: 17px;        /* nudge options down to align with value input */
   --pv-remove-size: 18px;
   --pv-remove-bg: rgba(0,0,0,.06);
   --pv-remove-bg-hover: rgba(0,0,0,.12);
 }
 
 /* List wrapper */
-.pv-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
+.pv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-/* One P+V unit: grid = prop | value | options */
-.pv-row{
-  position:relative;
-  display:grid;
-  grid-template-columns:minmax(var(--pv-col-prop-min), var(--pv-col-prop-max)) minmax(0,1fr) var(--pv-checkbox-col);
-  grid-template-areas:"prop value options";
-  gap:var(--pv-gap);
-  align-items:start;
-  box-sizing:border-box;
-  border:var(--pv-border);
-  border-radius:var(--pv-radius);
-  padding:10px;
-  background:#fff;
-  overflow:visible; /* allow dropdowns to overflow */
-}
-.pv-row:focus-within{
-  border-color:#9ec8ff;
-  box-shadow:0 0 0 2px rgba(46,132,255,.12);
+/* Row layout:
+   Desktop:  [✕][Property][Value]
+             [   Options (full width) ]
+   Mobile:   [✕][Property]
+             [   Value   ]
+             [   Options ]
+*/
+.pv-list .pv-row {
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    auto                         /* ✕ remove */
+    minmax(120px, 240px)         /* Property */
+    minmax(0, 1fr);              /* Value */
+  grid-template-areas:
+    "remove prop value"
+    ".      options options";
+  column-gap: 10px;
+  row-gap: 6px;
+  align-items: start;
+
+  border: var(--pv-border);
+  border-radius: var(--pv-radius);
+  padding: 10px;
+  background: #fff;
+  overflow: visible; /* allow suggestion dropdowns to overflow */
+  box-sizing: border-box;
 }
 
-/* Grid areas */
-.pv-row .pv-prop{ grid-area:prop; position:relative; }
-.pv-row .pv-value{ grid-area:value; position:relative; min-width:0; }
-.pv-row .pv-options{
-  grid-area:options;
-  align-self:start;
-  justify-self:center;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:4px;
-  margin-top:var(--pv-label-offset);
+/* Focus affordance */
+.pv-list .pv-row:focus-within {
+  border-color: #9ec8ff;
+  box-shadow: 0 0 0 2px rgba(46,132,255,.12);
 }
+
+/* Grid area mapping */
+.pv-list .pv-row .pv-remove { grid-area: remove; align-self: start; }
+.pv-list .pv-row .pv-prop   { grid-area: prop;   position: relative; min-width: 0; }
+.pv-list .pv-row .pv-value-item,
+.pv-list .pv-row .pv-value-external { grid-area: value; position: relative; min-width: 0; }
+.pv-list .pv-row .pv-options{
+  grid-area: options;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Respect [hidden] on value widgets */
+.pv-list .pv-row .pv-value[hidden] { display: none !important; }
 
 /* Field chrome */
-.pv-field{ position:relative; }
-.pv-field label{ display:block; font-weight:600; margin-bottom:4px; }
-.pv-field input[type="text"]{
-  width:100%;
-  padding:6px 8px;
-  border:1px solid #ccc;
-  border-radius:4px;
-  box-sizing:border-box;
+.pv-list .pv-field { position: relative; }
+.pv-list .pv-field label { display: block; font-weight: 600; margin-bottom: 4px; }
+.pv-list .pv-field input[type="text"]{
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 0;
 }
 
-/* Checkbox presentation */
-.pv-row .pv-options input[type="checkbox"]{
-  width:40px;
-  height:40px;
-  margin:0;
+/* Checkbox + label (smaller, calm) */
+.pv-list .pv-row .pv-options input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
 }
-.pv-row .pv-options label{
-  margin:0;
-  font-size:12px;
-  line-height:1.1;
-  text-align:center;
+.pv-list .pv-row .pv-options label{
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
-/* Picked state */
-.pv-picked{ border-color:#4caf50!important; background:#f6fff6; }
+/* Keyboard focus on label when box is focused */
+.pv-list .pv-row .pv-options input[type="checkbox"]:focus-visible + label {
+  outline: 2px solid #1EAEDB; /* Skeleton primary-ish */
+  outline-offset: 2px;
+  border-radius: 3px;
+}
 
-/* Autocomplete dropdown */
-.pv-suggest{
-  display:none;
-  position:absolute;
-  left:0; right:0;
-  z-index:50;
-  max-height:280px;
-  overflow-y:auto;
-  margin-top:2px;
-  padding:4px 0;
-  list-style:none;
-  background:#fff;
-  border:1px solid #d9d9d9;
-  border-radius:6px;
-  box-shadow:0 6px 16px rgba(0,0,0,.12);
+/* Hidden authoritative inputs should not affect layout */
+.pv-list .pv-row input[type="hidden"] { display: none; }
+
+/* Suggestion dropdown */
+.pv-list .pv-suggest{
+  display: none; /* toggled by JS */
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 2px;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
 }
-.pv-option{
-  padding:8px 10px;
-  cursor:pointer;
-  display:grid;
-  grid-template-columns:auto 1fr;
-  grid-template-rows:auto auto;
-  grid-column-gap:8px;
-  grid-row-gap:2px;
+.pv-list .pv-option{
+  padding: 8px 10px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  grid-column-gap: 8px;
+  grid-row-gap: 2px;
 }
-.pv-option .pv-id{
-  grid-row:1 / span 2;
-  align-self:start;
-  font:12px ui-monospace,Menlo,Consolas,monospace;
-  padding:2px 6px;
-  border:1px solid #e4e4e4;
-  border-radius:999px;
-  background:#f7f7f7;
-  color:#333;
+.pv-list .pv-option .pv-id{
+  grid-row: 1 / span 2;
+  align-self: start;
+  font: 12px ui-monospace,Menlo,Consolas,monospace;
+  padding: 2px 6px;
+  border: 1px solid #e4e4e4;
+  border-radius: 999px;
+  background: #f7f7f7;
+  color: #333;
 }
-.pv-option .pv-label{ font-weight:600; }
-.pv-option .pv-desc{ color:#666; font-size:12px; }
-.pv-option:hover,
-.pv-option.is-active{ background:#eef5ff; }
+.pv-list .pv-option .pv-label{ font-weight: 600; }
+.pv-list .pv-option .pv-desc{ color: #666; font-size: 12px; }
+.pv-list .pv-option:hover,
+.pv-list .pv-option.is-active{ background: #eef5ff; }
+
+/* Meta text under inputs (e.g., aria-live target) */
+.pv-list .pv-meta { margin-top: 4px; font-size: 12px; color: #555; }
 
 /* Remove (✕) button */
-.pv-remove{
-  position:absolute;
-  top:6px;
-  right:8px;
-  width:var(--pv-remove-size);
-  height:var(--pv-remove-size);
-  min-width:0;
-  padding:0;
-  appearance:none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border:0;
-  border-radius:4px;
-  background:var(--pv-remove-bg);
-  color:#777;
-  line-height:1;
-  font-size:12px;
-  cursor:pointer;
-  z-index:10;
-  transition:background .15s, color .15s, opacity .15s;
+.pv-list .pv-row .pv-remove{
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  width: var(--pv-remove-size);
+  height: var(--pv-remove-size);
+  cursor: pointer;
 }
-.pv-remove:hover,
-.pv-remove:focus{
-  background:var(--pv-remove-bg-hover);
-  color:#c00;
-  outline:none;
+.pv-list .pv-row .pv-remove:hover { opacity: .8; }
+
+/* Keep options under the ✕ in stacking order */
+.pv-list .pv-options { position: relative; z-index: 1; }
+
+/* Picked state helper */
+.pv-picked { border-color: #4caf50 !important; background: #f6fff6; }
+
+/* Optional helper for future auto-reference notes */
+.pv-list .pv-row .pv-hint{
+  font-size: 12px;
+  opacity: .8;
+  margin-left: 26px; /* aligns under label when used inline */
+  margin-top: 2px;
 }
 
-/* Keep options below the ✕ in stacking order */
-.pv-options{ position:relative; z-index:1; }
 
-/* Responsive: prop full width; value + options side-by-side */
-@media (max-width:680px){
-  .pv-row{
-    grid-template-columns:1fr var(--pv-checkbox-col);
+/* Responsive stacking */
+@media (max-width: 680px){
+  .pv-list .pv-row{
+    grid-template-columns: auto 1fr;
     grid-template-areas:
-      "prop prop"
-      "value options";
+      "remove prop"
+      ".      value"
+      ".      options";
   }
+}
+
+
+.alias-panel {
+  margin-top: .25rem;
+  padding: .5rem .75rem;
+  border: 1px solid #ddd;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+
+div.alias-panel h2.alias-title {
+  font-size: 10pt;
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0 0 .4rem;
+}
+
+
+.alias-panel label {
+  display: block;
+  margin: .1rem 0;
+  cursor: pointer;
+}
+
+.alias-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  margin-top: .25rem;
+}
+
+.alias-chip {
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 0 .5rem;
+  font-size: .85rem;
+}
+
+.alias-chip button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: .9em;
+  margin-left: .35rem;
+}
+
+
+/* Fix checkboxes only in alias panel */
+.alias-panel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  box-shadow: none !important;
+  vertical-align: middle;
+  margin-right: .4rem;
+}
+
+/* Tidy alias option rows */
+.alias-panel .alias-option {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: .12rem 0;
+}
+
+/* Make “Suggested aliases” a bit smaller */
+.alias-panel .alias-title {
+  margin: 0 0 .4rem;
+  font-size: .85rem; /* smaller than the form’s main labels */
+  font-weight: 600;
+}
+
+/* Panel box: applies to div.alias-panel and fieldset.alias-panel */
+.alias-panel {
+  margin-top: .25rem;
+  padding: .5rem .75rem;
+  border: 1px solid #ddd;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  text-align: left;              /* defeat global body{text-align:center} */
+  min-inline-size: 0;
+}
+
+/* Normalize fieldset/legend so they look like your <div><h2> */
+fieldset.alias-panel {           /* kill UA quirks */
+  padding: .5rem .75rem;         /* UA fieldset padding override */
+  border: 1px solid #ddd;
+}
+legend.alias-title {
+  float: none;                   /* avoid collapsing in some UAs */
+  width: auto;                   /* Safari quirk */
+  padding: 0;                    /* UA default padding */
+  margin: 0 0 .4rem;
+  line-height: 1.4;
+}
+
+/* Title: works for both h2.alias-title and legend.alias-title */
+.alias-panel .alias-title {
+  font-size: .85rem;
+  font-weight: 600;
+  margin: 0 0 .4rem;
+}
+
+/* Checkbox sizing ONLY inside alias panel; also defeat any global scaling */
+.alias-panel input[type="checkbox"] {
+  appearance: auto;
+  -webkit-appearance: checkbox;  /* Safari/iOS */
+  width: 18px;
+  height: 18px;
+  margin: 0 .4rem 0 0;
+  box-shadow: none !important;
+  transform: none !important;    /* in case something scales inputs globally */
+}
+
+/* Rows */
+.alias-option {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: .12rem 0;
+}
+
+/* Optional chips remain unchanged */
+.alias-chips { display:flex; flex-wrap:wrap; gap:.25rem; margin-top:.25rem; }
+.alias-chip  { background:#f3f3f3; border:1px solid #ddd; border-radius:999px; padding:0 .5rem; font-size:.85rem; }
+.alias-chip button { border:none; background:none; cursor:pointer; font-size:.9em; margin-left:.35rem; }
+
+
+/* Optional: bigger section headers you already have (e.g., “Personal details”, “reference”).
+   Add class="form-section-title" to those nodes (no structural change needed). */
+.form-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: .6rem 0 .35rem;
+}
+
+
+#update_description {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-right: .4em;
+}
+
+#update_description + label {
+  display: inline;
+  font-weight: normal;
+
 }

@@ -1,5 +1,5 @@
 <?php
-include_once 'functions.php';
+include_once __DIR__ . '/../lib/functions.php';
 
 /**
  * 

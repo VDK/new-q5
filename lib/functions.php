@@ -25,6 +25,8 @@ function sparqlQuery(string $sparqlQuery): array {
 
 
 
+
+
 function searchWikidataEntity(string $label, array $allowedInstanceOf = []): array {
     $params = [
         'action'          => 'wbsearchentities',

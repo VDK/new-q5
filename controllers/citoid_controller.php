@@ -3,8 +3,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-require_once __DIR__ . '/reference.php';
-require_once __DIR__ . '/citoid_ref.php';
+require_once __DIR__ . '/../models/citoid_ref.php';
 
 function out($data, int $code = 200) {
     http_response_code($code);

@@ -1,9 +1,9 @@
 <?php
 
-include_once 'person.php';
-include_once 'reference.php';
-include_once 'qs_helpers.php';
-include_once 'functions.php';
+include_once './models/person.php';
+include_once './models/reference.php';
+include_once './lib/qs_helpers.php';
+include_once './lib/functions.php';
 $error = '';
 $qs = false;
 
@@ -199,47 +199,66 @@ function handle_form_submission() {
 
   //end DOB
 
-  //construct QuickStatement 
-   if (!$person1->getQID()){
+  // construct QuickStatement 
+  if (!$person1->getQID()){
     $qs .= 
-"CREATE
-LAST|Lmul|\"".$person1->getName()."\"
-LAST|Len|\"".$person1->getName()."\"
-LAST|Lde|\"".$person1->getName()."\"
-LAST|Lfr|\"".$person1->getName()."\"
-LAST|Lnl|\"".$person1->getName()."\"
-LAST|Den|\"".$person1->getDescription()."\"
-LAST|P31|Q5";
+  "CREATE
+  LAST|Lmul|\"".$person1->getName()."\"
+  LAST|Len|\"".$person1->getName()."\"
+  LAST|Lde|\"".$person1->getName()."\"
+  LAST|Lfr|\"".$person1->getName()."\"
+  LAST|Lnl|\"".$person1->getName()."\"
+  LAST|Den|\"".$person1->getDescription()."\"
+  LAST|P31|Q5";
   }
- 
-  
-	 // Append properties to QuickStatements
-  $qs .= appendProp($person1->getQID(), $person1->getGender('qs'));
-	$qs .= appendProp($person1->getQID(), $person1->getName('qs'));
-	$qs .= appendProp($person1->getQID(), $person1->getDOB('qs'), $reference1->getQS());
-	$qs .= appendProp($person1->getQID(), $person1->getDOD('qs'), $reference1->getQS());
-	// Custom QuickStatement
 
-    // NEW: add dynamic p/v rows (robust to ext-as-value or ext-as-flag)
-    $pv_rows_raw = $_POST['pv'] ?? [];
-    if (!empty($pv_rows_raw)) {
-      $pv_rows = normalize_pv_from_post($pv_rows_raw); // helper below
+  // ------------------ NEW: update description on existing when requested ------------------
+  $last = $person1->getQID() ?: 'LAST';
+  if ($person1->getQID() && !empty($_POST['update_description'])) {
+    $desc = $person1->getDescription();
+    if ($desc !== '') {
+      $qs .= "\n".$last."|Den|\"".$desc."\"";
+    }
+  }
 
-      foreach ($pv_rows as $row) {
-        $p = _qs_norm_prop($row['p'] ?? '');
-        if (!$p) continue;
-
-        $val = _qs_fmt_value($row['v'] ?? '', !empty($row['ext'])); // ext => external id formatting
-        if ($val === '') continue;
-
-        $line = $p . '|' . $val;
-        $qs  .= appendProp(
-          $person1->getQID(),
-          $line,
-          !empty($row['ref']) ? $reference1->getQS() : null
-        );
+  // ------------------ NEW: aliases_en[] -> Amul ------------------
+  $aliases_en = $_POST['aliases_en'] ?? [];
+  if (is_array($aliases_en) && !empty($aliases_en)) {
+    // trim + de-dup + drop empties
+    $aliases_en = array_values(array_unique(array_filter(array_map('trim', $aliases_en))));
+    foreach ($aliases_en as $a) {
+      if ($a !== '') {
+        $qs .= "\n".$last."|Amul|\"".$a."\"";
       }
     }
+  }
+
+  // Append properties to QuickStatements
+  $qs .= appendProp($person1->getQID(), $person1->getGender('qs'));
+  $qs .= appendProp($person1->getQID(), $person1->getName('qs'));
+  $qs .= appendProp($person1->getQID(), $person1->getDOB('qs'), $reference1->getQS());
+  $qs .= appendProp($person1->getQID(), $person1->getDOD('qs'), $reference1->getQS());
+
+  // NEW: add dynamic p/v rows (robust to ext-as-value or ext-as-flag)
+  $pv_rows_raw = $_POST['pv'] ?? [];
+  if (!empty($pv_rows_raw)) {
+    $pv_rows = normalize_pv_from_post($pv_rows_raw); // your existing helper
+
+    foreach ($pv_rows as $row) {
+      $p = _qs_norm_prop($row['p'] ?? '');
+      if (!$p) continue;
+
+      $val = _qs_fmt_value($row['v'] ?? '', !empty($row['ext'])); // ext => external id formatting
+      if ($val === '') continue;
+
+      $line = $p . '|' . $val;
+      $qs  .= appendProp(
+        $person1->getQID(),
+        $line,
+        !empty($row['ref']) ? $reference1->getQS() : null
+      );
+    }
+  }
 
 
 
