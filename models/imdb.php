@@ -110,6 +110,22 @@ class IMDB extends Person
             fn($a) => strcasecmp($a, $displayName ?? '') !== 0
         ));
 
+        $desc_bio = null;
+        if (!empty($biography)) {
+            // Normalize whitespace
+            $bio1 = preg_replace('/\s+/u', ' ', trim($biography));
+
+            // Try: "... is a/an <CAPTURE> who/that/[,|.|;| end]"
+            if (preg_match('/\bis\s+a?n?\s+(.+?)(?:\s+(?:who|that)\b|[.,;]|$)/iu', $bio1, $m)) {
+                $cand = trim($m[1]);
+                // Keep it short-ish; strip trailing “and …” tails if they run long
+                $cand = preg_replace('/\s+and\s+.+$/iu', '', $cand);
+                // Capitalization normalization: keep as-is, but collapse interior spaces
+                $cand = preg_replace('/\s+/u', ' ', $cand);
+                if ($cand !== '') $desc_bio = $cand;
+            }
+        }
+
 
 
 
@@ -122,6 +138,7 @@ class IMDB extends Person
             'alias_candidates'           => $alias_candidates,
             'description_suggest_en_demonym' => $desc_demonym,
             'description_suggest_en_noun'    => $desc_noun,
+            'description_suggest_en_bio'      => $desc_bio,
             'p106'                       => $p106,
             'nationality_qid'           => $natData['nationality_qid'],
             'nationality_label'         => $nationality_label,

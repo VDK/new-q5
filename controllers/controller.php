@@ -202,36 +202,47 @@ function handle_form_submission() {
   // construct QuickStatement 
   if (!$person1->getQID()){
     $qs .= 
-  "CREATE
-  LAST|Lmul|\"".$person1->getName()."\"
-  LAST|Len|\"".$person1->getName()."\"
-  LAST|Lde|\"".$person1->getName()."\"
-  LAST|Lfr|\"".$person1->getName()."\"
-  LAST|Lnl|\"".$person1->getName()."\"
-  LAST|Den|\"".$person1->getDescription()."\"
-  LAST|P31|Q5";
+"CREATE
+LAST|Lmul|\"".$person1->getName()."\"
+LAST|Len|\"".$person1->getName()."\"
+LAST|Lde|\"".$person1->getName()."\"
+LAST|Lfr|\"".$person1->getName()."\"
+LAST|Lnl|\"".$person1->getName()."\"
+LAST|Den|\"".$person1->getDescription()."\"
+LAST|P31|Q5";
   }
 
   // ------------------ NEW: update description on existing when requested ------------------
-  $last = $person1->getQID() ?: 'LAST';
-  if ($person1->getQID() && !empty($_POST['update_description'])) {
-    $desc = $person1->getDescription();
-    if ($desc !== '') {
-      $qs .= "\n".$last."|Den|\"".$desc."\"";
-    }
-  }
+  $descFinal = $_POST['description_choice'] ?? '';
+    if (!empty($person1->getQID()) && $descFinal !== '') {
+        // Escape dubbele aanhalingstekens
+        $descFinal = trim(str_replace('"', '\"', $descFinal));
 
-  // ------------------ NEW: aliases_en[] -> Amul ------------------
-  $aliases_en = $_POST['aliases_en'] ?? [];
-  if (is_array($aliases_en) && !empty($aliases_en)) {
-    // trim + de-dup + drop empties
-    $aliases_en = array_values(array_unique(array_filter(array_map('trim', $aliases_en))));
-    foreach ($aliases_en as $a) {
-      if ($a !== '') {
-        $qs .= "\n".$last."|Amul|\"".$a."\"";
-      }
+        // Voeg beschrijving toe via appendProp()
+        $qs .= appendProp($person1->getQID(), 'Den|"' . $descFinal . '"');
     }
-  }
+
+    // ------------------ NEW: aliases_en[] -> Amul ------------------
+    $aliases_en = $_POST['aliases_en'] ?? [];
+
+    if (is_array($aliases_en) && !empty($aliases_en)) {
+        // trim + de-dup + drop empties
+        $aliases_en = array_values(array_unique(array_filter(array_map('trim', $aliases_en))));
+
+        // build all alias lines (escaped)
+        $aliasLines = [];
+        foreach ($aliases_en as $a) {
+            if ($a !== '') {
+                $a = str_replace('"', '\"', $a);
+                $aliasLines[] = 'Amul|"' . $a . '"';
+            }
+        }
+
+        if (!empty($aliasLines)) {
+            $qs .= appendProp($person1->getQID(), implode("\n", $aliasLines));
+        }
+    }
+
 
   // Append properties to QuickStatements
   $qs .= appendProp($person1->getQID(), $person1->getGender('qs'));

@@ -189,12 +189,20 @@ ul#responses > li{
 }
 ul#responses > li.option{
 	cursor: pointer;
+  border-style: solid;
+  border: 1px solid lightgrey;
+}
+ul#responses > li.new-item{
+   display: flex;
+  align-items: center;    
+  justify-content: center;  /* horizontal centering (optional) */
+  text-align: center;       /* centers multi-line text */
 }
 ul#responses > li.option:hover{
 	background-color: lightgrey;
 }
 ul#responses > li.selected{
-	cursor: hand;
+	cursor: auto;
 	background-color: darkgrey;
 }
 ul#responses > li > img.response_image{
@@ -203,7 +211,7 @@ ul#responses > li > img.response_image{
 }
 .word:hover{
 	color:red;
-	cursor: pointer; cursor: hand;
+	cursor: pointer;
 }
 .word{
 	margin-top: 5px;
@@ -604,15 +612,82 @@ legend.alias-title {
 }
 
 
-#update_description {
-  width: 18px;
-  height: 18px;
-  vertical-align: middle;
-  margin-right: .4em;
+/* === Description panel === */
+
+#replace_description {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  text-align: left;
+  margin-inline: auto;
 }
 
-#update_description + label {
-  display: inline;
-  font-weight: normal;
 
+
+#desc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Each description choice row */
+.desc-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: #fafafa;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 5px;
+}
+
+.desc-option:hover,
+.desc-option:has(input:focus-visible) {
+  background: #f0f7ff;
+  border-color: #cfe5ff;
+}
+
+/* Radio button alignment and sizing */
+.desc-option input[type="radio"] {
+  /*margin-top: 0.25rem;*/
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+/* Description text and source */
+.desc-option label {
+  display: block;
+  cursor: pointer;
+  line-height: 0.9;
+  flex-grow: 1;
+}
+
+.desc-option .desc-text {
+  display: block;
+  /*font-size: 0.95rem;*/
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.25rem;
+  word-break: break-word;
+}
+
+.desc-option .desc-source {
+  display: block;
+  font-size: 10pt;
+  color: #666;
+  font-weight: normal;
+}
+
+
+
+/* Optional: visually emphasize the selected radio’s container */
+.desc-option:has(input[type="radio"]:checked) {
+  border-color: #0072b2;
+  background: #eef6ff;
 }

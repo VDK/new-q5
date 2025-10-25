@@ -150,9 +150,22 @@ require_once 'controllers/notice_controller.php';
         <div id='possible_match'   hidden>
           <h1>Possible matches</h1>
           <input type="hidden" name="person_QID" id="person_QID"/>
-          <input type="hidden" name="description_suggestion" id="description_suggestion"/>
           <ul id='responses' ></ul>
         </div>
+        <div id="replace_description" hidden aria-live="polite">
+        <h2 id="desc-panel-title">Update description</h2>
+        <p id="desc-help" class="sr-only">Select one description option below.</p>
+
+        <div id="desc-options" role="radiogroup" aria-labelledby="desc-panel-title" aria-describedby="desc-help"></div>
+
+        
+
+        <!-- Hidden storage for suggestions (kept for server-side use / later review) -->
+        <input type="hidden" id="desc_choice" name="description_choice" />
+        <input type="hidden" id="desc_imdb_bio" name="desc_imdb_bio" />
+        <input type="hidden" id="desc_imdb_demonym" name="desc_imdb_demonym" />
+        <input type="hidden" id="desc_imdb_noun" name="desc_imdb_noun" />
+      </div>
 
         <h1>Reference:</h1>
           <label for="ref_url">URL</label>

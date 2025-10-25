@@ -142,11 +142,22 @@ function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','
 /** select match with existing Wikidata item **/
 // Keep your selectOption unchanged
 function selectOption() {
-  $('#person_QID').val($(this).attr('qid'));
-  const previouslySelected = $('#responses').find('.selected')[0];
-  $(previouslySelected).removeClass('selected').addClass('option');
-  $(this).addClass('selected').removeClass('option');
+  const $item  = $(this);
+  const $items = $('#responses').children();
+  const qid    = $item.data('qid') || $item.attr('qid');
+
+  // 1) Store QID
+  if (qid) $('#person_QID').val(qid);
+
+  // 2) Toggle selection (and A11y)
+  $items.removeClass('selected').addClass('option').attr('aria-selected', 'false');
+  $item.addClass('selected').removeClass('option').attr('aria-selected', 'true');
+
+
+  // 3) Open/update the Description panel
+  openDescriptionPanel(qid);
 }
+
 
 // ---- caching / indexing ----
 // --- globals ---
@@ -234,7 +245,7 @@ function handleSearchResponse (data){
   $("#possible_match").show();
   const $responses = $('#responses').empty();
 
-  const $new = $('<li/>', { class:'block-2 selected', text:'New item' }).on('click', selectOption);
+  const $new = $('<li/>', { class:'block-2 selected new-item', text:'New item' }).on('click', selectOption);
   $responses.append($new[0]);
 
   const frag = document.createDocumentFragment();
@@ -820,12 +831,26 @@ function wireExternalIdField($row, idx){
     }
 
       // description (only if empty)
-    if (!$('#description').val().trim() && data.description_suggest_en_noun) {
-      $('#description').val(data.description_suggest_en_noun);
+    const currentDesc = $('#description').val().trim();
+    if (!currentDesc) {
+      if (data.description_suggest_en_bio) {
+        $('#description').val(data.description_suggest_en_bio);
+      } else if (data.description_suggest_en_noun) {
+        $('#description').val(data.description_suggest_en_noun);
+      }
     }
 
+    if (data.description_suggest_en_bio) {
+      setDescCandidate('imdb_bio', data.description_suggest_en_bio);
+      $('#desc_imdb_bio').val(data.description_suggest_en_bio);
+    }
     if (data.description_suggest_en_demonym) {
-      $('#description_suggestion').val(data.description_suggest_en_demonym);
+      setDescCandidate('imdb_demonym', data.description_suggest_en_demonym);
+      $('#desc_imdb_demonym').val(data.description_suggest_en_demonym);
+    }
+    if (data.description_suggest_en_noun) {
+      setDescCandidate('imdb_noun', data.description_suggest_en_noun);
+      $('#desc_imdb_noun').val(data.description_suggest_en_noun);
     }
 
 
@@ -883,7 +908,6 @@ function wireExternalIdField($row, idx){
 
 
 
-});
 
 
 function showAliasSuggestions(aliases) {
@@ -932,3 +956,185 @@ function showAliasSuggestions(aliases) {
 
 
 
+
+// ---- Description candidates + panel ----
+const DESC_CANDS = {
+  imdb_bio: '',          // highest priority from IMDb (bio-derived)
+  imdb_demonym: '',      // demonym + occupation (e.g., "Dutch Wikimedian and photographer")
+  imdb_noun: '',         // occupation-only (e.g., "wikimedian and photographer")
+  srsearch_demonym: '',  // from selected srsearch result: demonym + occupation
+  srsearch_noun: '',     // from selected srsearch result: occupation + "from" + country
+  user_input: ''         // from the current #description field
+};
+
+function setDescCandidate(key, val){
+  if (!key) return;
+  const v = (val || '').trim();
+  DESC_CANDS[key] = v;
+}
+
+
+// Normalize text for de-duplication (case-insensitive, trim spaces & trailing punctuation)
+function normText(s) {
+  return String(s || '')
+    .trim()
+    .replace(/[.;,\s]+$/u, '') // strip common trailing punct/space
+    .toLowerCase();
+}
+
+function openDescriptionPanel(qid) {
+  const selectedItem = (lastResults || []).find(r => r.qitem === qid) || null;
+
+  // 1. Refresh candidates from current UI + selected item
+  setDescCandidate('user_input', ($('#description').val() || '').trim());
+
+  if (selectedItem) {
+    const { dateOfBirth, dateOfDeath } = selectedItem;
+    let yearSuffix = '';
+    if (dateOfBirth && dateOfDeath) {
+      const y1 = dateOfBirth.slice(0, 4);
+      const y2 = dateOfDeath.slice(0, 4);
+      yearSuffix = ` (${y1}–${y2})`;
+    }
+
+    const addYears = s => (s ? `${s}${yearSuffix}` : '');
+
+    setDescCandidate('srsearch_demonym', addYears(selectedItem.description_suggest_en_demonym));
+    setDescCandidate('srsearch_noun',    addYears(selectedItem.description_suggest_en_noun));
+  }
+
+  const $wrap = $('#desc-options').empty();
+
+  // 2. Build list (desired order)
+  const rawOpts = [];
+
+  if (selectedItem && selectedItem.descriptionEn) {
+    rawOpts.push({
+      key: 'wikidata_current',
+      text: selectedItem.descriptionEn,
+      label: 'Current Wikidata description',
+      preselect: true
+    });
+  }
+
+  rawOpts.push(
+    { key: 'imdb_bio',         text: DESC_CANDS.imdb_bio,         label: 'From IMDb (bio-derived)' },
+    { key: 'imdb_demonym',     text: DESC_CANDS.imdb_demonym,     label: 'From IMDb (demonym + occupation)' },
+    { key: 'imdb_noun',        text: DESC_CANDS.imdb_noun,        label: 'From IMDb (occupation + country of birth)' },
+    { key: 'srsearch_demonym', text: DESC_CANDS.srsearch_demonym, label: 'From Wikidata properties of selected item' },
+    { key: 'srsearch_noun',    text: DESC_CANDS.srsearch_noun,    label: 'From Wikidata properties of selected item' },
+    { key: 'user_input',       text: DESC_CANDS.user_input,       label: 'Use my current input' }
+  );
+
+  // 3. Deduplicate by normalized text
+  const seen = new Map(); // norm -> {key,text,label,preselect}
+  rawOpts.forEach(o => {
+    const t = (o.text || '').trim();
+    if (!t) return;
+    const n = normText(t);
+    if (!n) return;
+    if (!seen.has(n)) {
+      seen.set(n, {
+        key: o.key,
+        text: t,
+        label: o.label,
+        preselect: !!o.preselect
+      });
+    }
+  });
+
+  const opts = Array.from(seen.values());
+  if (!opts.length) {
+    $('#replace_description').prop('hidden', true);
+    return;
+  }
+
+  // 4. Work out which one should start checked
+  const defaultKey = (opts.find(o => o.preselect) || opts[0]).key;
+
+  // We'll also keep a reference to the hidden <input id="desc_choice">
+  const $hiddenChoice = $('#desc_choice');
+
+  // Helper to sync hidden field based on a radio element
+  function syncHiddenFromRadio($radio) {
+    const keep = $radio.attr('data-keep') === '1';
+    if (keep) {
+      // user chose "keep current Wikidata description" → send empty
+      $hiddenChoice.val('');
+    } else {
+      // user chose a new description
+      $hiddenChoice.val($radio.attr('data-desc') || '');
+    }
+  }
+
+  // 5. Render each option as a radio row
+  opts.forEach((o, i) => {
+    const id = `desc_opt_${o.key}_${i}`;
+    const isCurrent = o.preselect === true;
+
+    const $row = $('<div class="desc-option"></div>');
+
+    // We do NOT care about `.val()` for POST anymore.
+    // We just need to (a) group radios, (b) know which one is "keep".
+    const $radio = $(`
+      <input type="radio" name="desc_choice_radio" id="${id}">
+    `)
+      .attr('data-desc', o.text)          // human text
+      .attr('data-keep', isCurrent ? '1' : '0');
+
+    if (o.key === defaultKey) {
+      $radio.prop('checked', true);
+    }
+
+    const $lbl = $(`
+      <label for="${id}">
+        <span class="desc-text"></span><br>
+        <span class="desc-source"></span>
+      </label>
+    `);
+    $lbl.find('.desc-text').text(o.text);
+    $lbl.find('.desc-source').text(o.label);
+
+    $row.append($radio, $lbl);
+    $wrap.append($row);
+  });
+
+  // 6. After rendering, bind change handler once
+  // (You can .off() first to be safe if this panel can re-open.)
+  $wrap.off('change.descChoice').on('change.descChoice', 'input[name="desc_choice_radio"]', function() {
+    syncHiddenFromRadio($(this));
+  });
+
+  // 7. Initialize hidden field to the default selection
+  const $initial = $wrap.find('input[name="desc_choice_radio"]:checked');
+  if ($initial.length) {
+    syncHiddenFromRadio($initial);
+  } else {
+    // Fallback: nothing checked means no change.
+    $hiddenChoice.val('');
+  }
+
+  // 8. Mirror the suggestions into the hidden debug fields you already keep
+  $('#desc_imdb_bio').val(DESC_CANDS.imdb_bio || '');
+  $('#desc_imdb_demonym').val(DESC_CANDS.imdb_demonym || '');
+  $('#desc_imdb_noun').val(DESC_CANDS.imdb_noun || '');
+
+  $('#replace_description').prop('hidden', false);
+}
+
+
+
+
+
+// Apply button handler
+$(document).off('click', '#desc_apply_btn').on('click', '#desc_apply_btn', function(){
+  const chosen = $('input[name="desc_choice_radio"]:checked').val() || '';
+  $('#desc_choice').val(chosen);
+  if (chosen) {
+    $('#description').val(chosen);
+    $('#desc_update_checkbox').prop('checked', true);
+  }
+});
+
+
+});

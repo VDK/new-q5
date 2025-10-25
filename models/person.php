@@ -606,6 +606,7 @@ SPARQL;
         'great britain' => 'United Kingdom',
         'the netherlands' => 'Netherlands',
         'kingdom of the netherlands' => 'Netherlands',
+        'kingdom of denmark' => 'Denmark',
     ];
     $country = $canonical[$key] ?? $last;
 
